@@ -449,8 +449,7 @@
     /* ===== GREEN GLOW PAYMENT BANNER ===== */
     @keyframes greenGlow{0%,100%{box-shadow:0 0 10px rgba(52,211,153,.4),0 0 20px rgba(52,211,153,.2)}50%{box-shadow:0 0 20px rgba(52,211,153,.7),0 0 40px rgba(52,211,153,.35),0 0 60px rgba(52,211,153,.15)}}
     @keyframes glowText{0%,100%{text-shadow:0 0 8px rgba(52,211,153,.6)}50%{text-shadow:0 0 16px rgba(52,211,153,1),0 0 30px rgba(52,211,153,.5)}}
-    .pay-save-banner{background:linear-gradient(135deg,rgba(52,211,153,.12),rgba(16,185,129,.06));border:1px solid rgba(52,211,153,.45);border-radius:var(--radius-xl);padding:14px 16px;margin-bottom:14px;display:flex;align-items:center;gap:12px;cursor:pointer;animation:riseUp .4s ease both;transition:all .2s ease;}
-    .pay-save-banner:active{transform:scale(.98);background:rgba(52,211,153,.2);}
+
     .pay-save-icon{width:42px;height:42px;border-radius:12px;background:rgba(52,211,153,.2);border:1px solid rgba(52,211,153,.4);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;}
     .pay-save-title{font-size:14px;font-weight:900;color:var(--emerald);letter-spacing:.3px;animation:glowText 2.5s ease-in-out infinite;}
     .pay-save-sub{font-size:10px;font-weight:600;color:rgba(52,211,153,.7);margin-top:2px;}
@@ -483,8 +482,7 @@
     .sell-pay-num{font-size:11px;font-weight:600;color:var(--subtext);margin-top:1px;}
     .sell-pay-num.nosaved{color:var(--warning);}
     .sell-pay-go{font-size:9px;font-weight:900;color:var(--sky-dark);margin-left:auto;white-space:nowrap;flex-shrink:0;background:var(--sky-light);border:1px solid rgba(56,189,248,.3);padding:4px 9px;border-radius:8px;}
-    .manage-pay-link{font-size:10px;color:var(--sky-dark);text-align:right;font-weight:800;cursor:pointer;padding:3px 0 7px;display:flex;align-items:center;justify-content:flex-end;gap:4px;transition:opacity .15s;}
-    .manage-pay-link:active{opacity:.7;}
+
 
     /* ===== COIN AMOUNT K LABEL ===== */
     .coin-k-label{font-size:9px;font-weight:900;letter-spacing:1.5px;color:var(--subtext);margin-bottom:6px;padding:0 2px;}
@@ -531,36 +529,14 @@
       <button class="qa-btn qa-admin hidden" type="button" id="admin-btn" style="grid-column:1/-1;"><div class="qa-icon" style="background:var(--sky-light);color:var(--sky-dark);">🛡️</div><div><div class="qa-main-text">Admin Panel</div><div class="qa-sub-text" style="color:var(--sky-dark);">RESTRICTED ACCESS</div></div></button>
     </div>
 
-    <!-- GREEN GLOW PAYMENT BANNER -->
-    <div class="pay-save-banner" onclick="userSwitchTab('payment-settings-scr')">
-      <div class="pay-save-icon">💳</div>
-      <div style="flex:1;min-width:0;">
-        <div class="pay-save-title">SAVE YOUR PAYMENT METHOD</div>
-        <div class="pay-save-sub">Tap to save your payment numbers for faster selling</div>
-      </div>
-      <div class="pay-save-arrow">›</div>
-    </div>
+
 
     <div id="home-scr">
       <div class="sec-title" style="margin-top:18px;">LIVE MARKET <div class="s-dot on" style="margin-left:4px;width:7px;height:7px;"></div></div>
       <div id="market-list"></div>
     </div>
 
-    <!-- PAYMENT SETTINGS SCREEN -->
-    <div id="payment-settings-scr" style="display:none;padding-top:6px;">
-      <div class="pay-settings-header">
-        <button class="cd-back-btn" type="button" onclick="userSwitchTab('home-scr')">←</button>
-        <div>
-          <div style="font-size:18px;font-weight:900;color:var(--text);">Payment Settings</div>
-          <div style="font-size:10px;font-weight:700;color:var(--subtext);margin-top:2px;">Save your payment numbers</div>
-        </div>
-      </div>
-      <div class="notice-box" style="margin-bottom:14px;">
-        <div class="notice-title">💡 How it works</div>
-        <div class="notice-text">Save your payment number for each method below. When you sell coins, your saved numbers will auto-fill in the form.</div>
-      </div>
-      <div id="payment-settings-list"></div>
-    </div>
+
 
     <div id="vpn-scr" style="display:none;padding-top:6px;">
       <div class="sec-title" style="justify-content:space-between;width:100%;"><div style="display:flex;align-items:center;gap:7px;">PREMIUM VPN STORE</div><button type="button" class="settings-back-inline" onclick="userSwitchTab('home-scr')" style="padding:4px 8px;">← Back</button></div>
@@ -614,7 +590,7 @@
       <div class="sell-pay-section">
         <div class="sell-pay-section-title">💳 PAYMENT METHOD</div>
         <div id="sell-pay-cards"></div>
-        <div class="manage-pay-link" onclick="closeOrderModal();userSwitchTab('payment-settings-scr');">⚙ Manage Payment Numbers →</div>
+
       </div>
       <div class="calc-box"><div class="calc-row"><span style="color:var(--subtext);">Coin Unit</span><span id="coin-unit-val" style="font-weight:800;" class="coin-k-display">—</span></div><div class="calc-row"><span style="color:var(--subtext);">Base Amount</span><span id="base-val" style="font-weight:800;">0.00 ৳</span></div><div class="calc-row"><span style="color:var(--danger);">Send Fee</span><span id="fee-val" style="color:var(--danger);font-weight:800;">- 5.00 ৳</span></div><div class="calc-divider"></div><div class="calc-row"><span style="color:var(--subtext);">Net Payable</span><span id="c-res" style="color:var(--sky-dark);">0.00 ৳</span></div></div>
       <div class="proof-upload" id="proof-upload-box">
@@ -1328,6 +1304,13 @@
     function orderShortId(order){ return String(order?.id || '').slice(-7) || '—'; }
     function orderUserLabel(order){ return order?.username && order.username !== 'no_username' ? '@' + order.username : (order?.user || 'Guest'); }
     function getOrderPaymentNumber(order){ return order?.number || '—'; }
+    // Returns correctly-formatted payout string: $ for USD orders, ৳ for BDT
+    function formatOrderPayout(order){
+      if(order && order.currency === 'USD' && order.payable_usd){
+        return `$${Number(order.payable_usd).toFixed(2)}`;
+      }
+      return `${formatOrderPayout(order)}`;
+    }
     function getOrderUserChatId(order){
       const candidates = [order?.telegram_chat_id, order?.userId, order?.user_id];
       for(const value of candidates){
@@ -1351,14 +1334,15 @@
 
     function buildNewOrderMessage(order){
       if(order.order_type === 'vpn'){
-        return `🆕 <b>NEW VPN ORDER</b>\n\n👤 <b>User:</b> ${tgEscape(orderUserLabel(order))}\n🆔 <b>User ID:</b> ${tgEscape(order.userId || order.user_id || '—')}\n🌐 <b>VPN:</b> ${tgEscape(order.vpn_brand || '—')}\n📦 <b>Plan:</b> ${tgEscape(order.vpn_plan || '—')}\n💰 <b>Payout:</b> ${Number(order.payable || 0).toFixed(2)}৳\n💳 <b>Method:</b> ${tgEscape(order.method || '—')}\n📱 <b>Payment:</b> ${tgEscape(getOrderPaymentNumber(order))}\n📸 <b>Proof:</b> ${order.proof_uploaded ? 'Uploaded' : 'Not uploaded'}\n\n🆔 <b>Order ID:</b> #${tgEscape(orderShortId(order))}\n⏳ <b>Status:</b> Pending`;
+        return `🆕 <b>NEW VPN ORDER</b>\n\n👤 <b>User:</b> ${tgEscape(orderUserLabel(order))}\n🆔 <b>User ID:</b> ${tgEscape(order.userId || order.user_id || '—')}\n🌐 <b>VPN:</b> ${tgEscape(order.vpn_brand || '—')}\n📦 <b>Plan:</b> ${tgEscape(order.vpn_plan || '—')}\n💰 <b>Payout:</b> ${formatOrderPayout(order)}\n💳 <b>Method:</b> ${tgEscape(order.method || '—')}\n📱 <b>Payment:</b> ${tgEscape(getOrderPaymentNumber(order))}\n📸 <b>Proof:</b> ${order.proof_uploaded ? 'Uploaded' : 'Not uploaded'}\n\n🆔 <b>Order ID:</b> #${tgEscape(orderShortId(order))}\n⏳ <b>Status:</b> Pending`;
       }
-      return `🆕 <b>NEW COIN ORDER</b>\n\n👤 <b>User:</b> ${tgEscape(orderUserLabel(order))}\n🆔 <b>User ID:</b> ${tgEscape(order.userId || order.user_id || '—')}\n🪙 <b>Coin:</b> ${tgEscape(order.coin || '—')}\n📦 <b>Amount:</b> ${Number(order.amt || 0).toLocaleString()}\n💰 <b>Payout:</b> ${Number(order.payable || 0).toFixed(2)}৳\n💳 <b>Method:</b> ${tgEscape(order.method || '—')}\n📱 <b>Payment:</b> ${tgEscape(getOrderPaymentNumber(order))}\n📨 <b>Sender:</b> ${tgEscape(order.sender || '—')}\n🎯 <b>Target ID:</b> ${tgEscape(order.targetId || order.target_id || '—')}\n📸 <b>Proof:</b> ${order.proof_uploaded ? 'Uploaded' : 'Not uploaded'}\n\n🆔 <b>Order ID:</b> #${tgEscape(orderShortId(order))}\n⏳ <b>Status:</b> Pending`;
+      const currencyNote = (order.currency === 'USD' && order.dollarRate) ? ` (1$=${order.dollarRate}৳)` : '';
+      return `🆕 <b>NEW COIN ORDER</b>\n\n👤 <b>User:</b> ${tgEscape(orderUserLabel(order))}\n🆔 <b>User ID:</b> ${tgEscape(order.userId || order.user_id || '—')}\n🪙 <b>Coin:</b> ${tgEscape(order.coin || '—')}\n📦 <b>Amount:</b> ${Number(order.amt || 0).toLocaleString()}\n💰 <b>Payout:</b> ${formatOrderPayout(order)}${currencyNote}\n💳 <b>Method:</b> ${tgEscape(order.method || '—')}\n📱 <b>Payment:</b> ${tgEscape(getOrderPaymentNumber(order))}\n📨 <b>Sender:</b> ${tgEscape(order.sender || '—')}\n🎯 <b>Target ID:</b> ${tgEscape(order.targetId || order.target_id || '—')}\n📸 <b>Proof:</b> ${order.proof_uploaded ? 'Uploaded' : 'Not uploaded'}\n\n🆔 <b>Order ID:</b> #${tgEscape(orderShortId(order))}\n⏳ <b>Status:</b> Pending`;
     }
     
     function buildUserOrderSubmittedMessage(order){
       let details = order.order_type === 'vpn' ? `🌐 <b>VPN:</b> ${tgEscape(order.vpn_brand || '—')}\n📦 <b>Plan:</b> ${tgEscape(order.vpn_plan || '—')}` : `🪙 <b>কয়েন:</b> ${tgEscape(order.coin || '—')}\n📦 <b>পরিমাণ:</b> ${Number(order.amt || 0).toLocaleString()}`;
-      return `📩 <b>অর্ডার গ্রহণ করা হয়েছে</b>\n\nআপনার অর্ডারটি সফলভাবে গ্রহণ করা হয়েছে। আমাদের টিম অর্ডারটি যাচাই করছে।\n\n🆔 <b>অর্ডার আইডি:</b> #${tgEscape(orderShortId(order))}\n${details}\n💰 <b>পেমেন্ট:</b> ${Number(order.payable || 0).toFixed(2)}৳\n💳 <b>মাধ্যম:</b> ${tgEscape(order.method || '—')}\n📱 <b>পেমেন্ট নম্বর:</b> ${tgEscape(getOrderPaymentNumber(order))}\n\n<b>আমাদের সাথে নিরাপদ লেনদেনের জন্য ধন্যবাদ।</b>`;
+      return `📩 <b>অর্ডার গ্রহণ করা হয়েছে</b>\n\nআপনার অর্ডারটি সফলভাবে গ্রহণ করা হয়েছে। আমাদের টিম অর্ডারটি যাচাই করছে।\n\n🆔 <b>অর্ডার আইডি:</b> #${tgEscape(orderShortId(order))}\n${details}\n💰 <b>পেমেন্ট:</b> ${formatOrderPayout(order)}\n💳 <b>মাধ্যম:</b> ${tgEscape(order.method || '—')}\n📱 <b>পেমেন্ট নম্বর:</b> ${tgEscape(getOrderPaymentNumber(order))}\n\n<b>আমাদের সাথে নিরাপদ লেনদেনের জন্য ধন্যবাদ।</b>`;
     }
     
     function buildOrderStatusMessage(order, orderStatus){
@@ -1366,7 +1350,7 @@
       let details = order.order_type === 'vpn' ? `🌐 <b>VPN:</b> ${tgEscape(order.vpn_brand || '—')}` : `🪙 <b>কয়েন:</b> ${tgEscape(order.coin || '—')}\n📦 <b>পরিমাণ:</b> ${Number(order.amt || 0).toLocaleString()}`;
 
       if(status === 'approved' || status === 'completed'){
-        let extra = order.order_type === 'vpn' ? `\n🔐 <b>Credentials:</b> Check App History` : `\n💰 <b>পেমেন্ট:</b> ${Number(order.payable || 0).toFixed(2)}৳\n💳 <b>মাধ্যম:</b> ${tgEscape(order.method || '—')}\n📱 <b>পেমেন্ট নম্বর:</b> ${tgEscape(getOrderPaymentNumber(order))}`;
+        let extra = order.order_type === 'vpn' ? `\n🔐 <b>Credentials:</b> Check App History` : `\n💰 <b>পেমেন্ট:</b> ${formatOrderPayout(order)}\n💳 <b>মাধ্যম:</b> ${tgEscape(order.method || '—')}\n📱 <b>পেমেন্ট নম্বর:</b> ${tgEscape(getOrderPaymentNumber(order))}`;
         return `✅ <b>অর্ডার অনুমোদিত হয়েছে</b>\n\nআপনার অর্ডারটি যাচাই করে অনুমোদন করা হয়েছে।\n\n🆔 <b>অর্ডার আইডি:</b> #${tgEscape(orderShortId(order))}\n${details}${extra}\n\n<b>আমাদের সাথে নিরাপদ লেনদেনের জন্য ধন্যবাদ।</b>`;
       }
 
@@ -1379,7 +1363,7 @@
 
     function buildPaymentPaidMessage(order){
       let details = order.order_type === 'vpn' ? `🌐 <b>VPN:</b> ${tgEscape(order.vpn_brand || '—')}` : `🪙 <b>কয়েন:</b> ${tgEscape(order.coin || '—')}\n📦 <b>পরিমাণ:</b> ${Number(order.amt || 0).toLocaleString()}`;
-      return `💸 <b>পেমেন্ট সম্পন্ন হয়েছে</b>\n\nআপনার অর্ডারের পেমেন্ট সফলভাবে সম্পন্ন করা হয়েছে। অনুগ্রহ করে আপনার পেমেন্ট অ্যাকাউন্ট চেক করুন।\n\n🆔 <b>অর্ডার আইডি:</b> #${tgEscape(orderShortId(order))}\n${details}\n💰 <b>পেমেন্ট:</b> ${Number(order.payable || 0).toFixed(2)}৳\n💳 <b>মাধ্যম:</b> ${tgEscape(order.method || '—')}\n📱 <b>পেমেন্ট নম্বর:</b> ${tgEscape(getOrderPaymentNumber(order))}\n🔖 <b>রেফারেন্স:</b> ${tgEscape(order.payment_reference_id || '—')}\n\n<b>আমাদের সাথে নিরাপদ লেনদেনের জন্য ধন্যবাদ।</b>`;
+      return `💸 <b>পেমেন্ট সম্পন্ন হয়েছে</b>\n\nআপনার অর্ডারের পেমেন্ট সফলভাবে সম্পন্ন করা হয়েছে। অনুগ্রহ করে আপনার পেমেন্ট অ্যাকাউন্ট চেক করুন।\n\n🆔 <b>অর্ডার আইডি:</b> #${tgEscape(orderShortId(order))}\n${details}\n💰 <b>পেমেন্ট:</b> ${formatOrderPayout(order)}\n💳 <b>মাধ্যম:</b> ${tgEscape(order.method || '—')}\n📱 <b>পেমেন্ট নম্বর:</b> ${tgEscape(getOrderPaymentNumber(order))}\n🔖 <b>রেফারেন্স:</b> ${tgEscape(order.payment_reference_id || '—')}\n\n<b>আমাদের সাথে নিরাপদ লেনদেনের জন্য ধন্যবাদ।</b>`;
     }
 
     function finishLoading(){
@@ -2024,7 +2008,7 @@
     }
 
     function userSwitchTab(screenId){
-      ['home-scr','vpn-scr','history-scr','leaderboard-scr','tutorial-scr','payment-settings-scr'].forEach(s => {
+      ['home-scr','vpn-scr','history-scr','leaderboard-scr','tutorial-scr'].forEach(s => {
         const el = $(s); if(!el) return;
         const show = s === screenId;
         el.style.display = show ? 'block' : 'none';
@@ -2032,8 +2016,6 @@
         if(show) el.classList.add('no-replay-anim');
       });
       document.querySelectorAll('#user-nav .nav-tab').forEach(tab => tab.classList.toggle('active', tab.dataset.screen === screenId));
-      // Render payment settings page when switching to it
-      if(screenId === 'payment-settings-scr') renderPaymentSettingsPage();
       // Refresh sell form cards when returning home (in case settings changed)
       if(screenId === 'home-scr') renderSellFormPaymentCards();
       // Load and render leaderboard
@@ -2249,7 +2231,7 @@
             gridHtml += `<div class="info-cell"><small>SENDER (ID/CODE)</small><b style="cursor:pointer; color:var(--sky-dark); display:inline-flex; align-items:center; gap:4px;" onclick="copyTextValue('${escapeHtml(o.sender)}', 'Sender Info')" title="Click to Copy">${escapeHtml(o.sender)} <span>⧉</span></b></div>`;
             gridHtml += `<div class="info-cell"><small>TARGET ID</small><b>${escapeHtml(o.targetId || '—')}</b></div>`;
         }
-        gridHtml += `<div class="info-cell"><small>PAYOUT</small><b style="color:var(--emerald); font-size:14px;">${money(o.payable)}</b></div>`;
+        gridHtml += `<div class="info-cell"><small>PAYOUT</small><b style="color:var(--emerald); font-size:14px;">${formatOrderPayout(o)}</b></div>`;
         
         return `<div class="order-card ${escapeHtml(cardClass)}" style="animation-delay:${i*.04}s;">
           <div class="order-header"><div><div class="order-user">${escapeHtml(displayName)}</div><div class="order-id">#${escapeHtml(String(o.id).slice(-7))}</div></div><span class="order-badge badge-${os}">${os.toUpperCase()}</span></div>
