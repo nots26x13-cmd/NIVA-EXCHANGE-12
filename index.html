@@ -91,6 +91,30 @@
     .rate-cell small{font-size:8px;font-weight:800;letter-spacing:1px;color:var(--subtext);display:block;margin-bottom:4px;}
     .rate-cell b{font-size:15px;font-weight:900;color:var(--sky-dark);}
     .coin-tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;}
+    
+    /* LEADERBOARD STYLES */
+    .leaderboard-container{animation:riseUp .4s ease both;}
+    .leaderboard-header{background:linear-gradient(135deg,var(--sky),rgba(14,165,233,.7));border-radius:var(--radius-xl);padding:20px 16px;margin-bottom:16px;box-shadow:0 8px 24px rgba(14,165,233,.25);}
+    .leaderboard-title{font-size:24px;font-weight:900;color:#fff;margin-bottom:4px;}
+    .leaderboard-subtitle{font-size:12px;font-weight:600;color:rgba(255,255,255,.8);}
+    .leaderboard-list{display:flex;flex-direction:column;gap:10px;}
+    .leaderboard-rank{background:var(--panel2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:12px 14px;display:flex;align-items:center;gap:12px;transition:all .2s ease;animation:riseUp .4s ease both;}
+    .leaderboard-rank:active{transform:scale(.98);box-shadow:0 0 0 2px var(--sky),var(--shadow-md);}
+    .rank-number{width:40px;height:40px;border-radius:10px;background:var(--gray-light);display:flex;align-items:center;justify-content:center;font-weight:900;font-size:16px;flex-shrink:0;min-width:40px;}
+    .rank-number.top-1{background:linear-gradient(135deg,#fbbf24,#fcd34d);color:#000;}
+    .rank-number.top-2{background:linear-gradient(135deg,#e5e7eb,#f3f4f6);color:#000;}
+    .rank-number.top-3{background:linear-gradient(135deg,#f97316,#fbbf24);color:#fff;}
+    .rank-info{flex:1;min-width:0;}
+    .rank-name{font-size:14px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+    .rank-coins{font-size:12px;font-weight:600;color:var(--sky-dark);margin-top:2px;}
+    .rank-badge{margin-left:auto;flex-shrink:0;background:var(--sky-light);border:1px solid var(--sky);border-radius:8px;padding:4px 8px;font-size:10px;font-weight:800;color:var(--sky-dark);letter-spacing:.5px;}
+    .rank-badge.badge-gold{background:rgba(251,191,36,.15);border-color:#fbbf24;color:#fbbf24;}
+    .rank-badge.badge-silver{background:rgba(229,231,235,.15);border-color:#e5e7eb;color:#e5e7eb;}
+    .rank-badge.badge-bronze{background:rgba(249,115,22,.15);border-color:#f97316;color:#f97316;}
+    .leaderboard-empty{text-align:center;padding:40px 20px;color:var(--subtext);}
+    .leaderboard-empty-icon{font-size:48px;margin-bottom:12px;}
+    .leaderboard-loading{text-align:center;padding:40px 20px;color:var(--subtext);animation:fadeIn .4s ease;}
+    .leaderboard-loading::after{content:'';display:block;width:40px;height:40px;margin:20px auto 0;border:3px solid var(--border);border-top-color:var(--sky);border-radius:50%;animation:spin 1s linear infinite;}
     .ctag{font-size:9px;font-weight:700;padding:4px 10px;border-radius:20px;background:var(--sky-light);color:var(--sky-dark);border:1px solid rgba(56,189,248,.3);}
 
     .hist-card{background:var(--panel2);border:1px solid var(--border);border-radius:var(--radius-lg);margin-bottom:10px;box-shadow:var(--shadow-sm);overflow:hidden;animation:riseUp .35s ease both;}
@@ -548,6 +572,18 @@
       <div id="history-list"></div>
     </div>
 
+    <div id="leaderboard-scr" style="display:none;">
+      <div class="leaderboard-container">
+        <div class="leaderboard-header">
+          <div class="leaderboard-title">🏆 TOP SELLERS</div>
+          <div class="leaderboard-subtitle">Users with the most coins sold</div>
+        </div>
+        <div id="leaderboard-content">
+          <div class="leaderboard-loading"></div>
+        </div>
+      </div>
+    </div>
+
     <div id="tutorial-scr" style="display:none;padding-top:6px;">
       <div class="sec-title">TUTORIAL VIDEOS</div>
       <div id="tutorial-list"></div>
@@ -556,6 +592,7 @@
     <nav class="nav-dock" id="user-nav">
       <button class="nav-tab active" id="tab-home" type="button" data-screen="home-scr"><span class="nav-icon">🏠</span><span class="nav-label">Market</span></button>
       <button class="nav-tab" id="tab-hist" type="button" data-screen="history-scr"><span class="nav-icon">🕒</span><span class="nav-label">History</span></button>
+      <button class="nav-tab" id="tab-leaderboard" type="button" data-screen="leaderboard-scr"><span class="nav-icon">🏆</span><span class="nav-label">Top Sellers</span></button>
       <button class="nav-tab" id="tab-tutorial" type="button" data-screen="tutorial-scr"><span class="nav-icon">▶️</span><span class="nav-label">Tutorial</span></button>
     </nav>
   </div>
@@ -1895,8 +1932,90 @@
       }).catch(err => { showToast('Submit failed','error'); }).finally(() => { submitting = false; btn.textContent = 'CONFIRM VPN ORDER →'; btn.disabled = false; });
     }
 
+    // LEADERBOARD FUNCTIONS
+    async function renderLeaderboard(){
+      const container = $('leaderboard-content');
+      if(!container) return;
+      
+      container.innerHTML = '<div class="leaderboard-loading"></div>';
+      
+      try {
+        const ordersSnapshot = await new Promise((resolve, reject) => {
+          db.ref('orders').orderByChild('status').equalTo('completed').once('value', resolve, reject);
+        });
+        
+        const userStats = {};
+        ordersSnapshot.forEach(snap => {
+          const order = snap.val();
+          if(!order) return;
+          
+          const userId = order.user_id || order.userId;
+          const username = order.user || order.username || 'Anonymous';
+          
+          if(!userStats[userId]) {
+            userStats[userId] = {
+              userId,
+              username,
+              coinsEarned: 0,
+              totalOrders: 0
+            };
+          }
+          
+          // Count coins from completed orders
+          const qty = parseFloat(order.quantity) || parseFloat(order.coin_quantity) || 0;
+          userStats[userId].coinsEarned += qty;
+          userStats[userId].totalOrders += 1;
+        });
+        
+        // Convert to array and sort by coins earned (descending)
+        let leaderboardArray = Object.values(userStats).sort((a, b) => b.coinsEarned - a.coinsEarned);
+        
+        // Take only top 10
+        leaderboardArray = leaderboardArray.slice(0, 10);
+        
+        if(leaderboardArray.length === 0) {
+          container.innerHTML = '<div class="leaderboard-empty"><div class="leaderboard-empty-icon">📋</div><p>No sellers yet</p></div>';
+          return;
+        }
+        
+        const html = leaderboardArray.map((user, idx) => {
+          const rank = idx + 1;
+          let rankClass = '';
+          if(rank === 1) rankClass = 'top-1';
+          else if(rank === 2) rankClass = 'top-2';
+          else if(rank === 3) rankClass = 'top-3';
+          
+          let badgeClass = '';
+          let badgeText = '';
+          if(rank === 1) { badgeClass = 'badge-gold'; badgeText = '🥇'; }
+          else if(rank === 2) { badgeClass = 'badge-silver'; badgeText = '🥈'; }
+          else if(rank === 3) { badgeClass = 'badge-bronze'; badgeText = '🥉'; }
+          
+          const coinsDisplay = user.coinsEarned >= 1000000 ? (user.coinsEarned / 1000000).toFixed(1) + 'M' : 
+                               user.coinsEarned >= 1000 ? (user.coinsEarned / 1000).toFixed(1) + 'K' : 
+                               user.coinsEarned.toLocaleString();
+          
+          return `
+            <div class="leaderboard-rank" style="animation-delay:${idx * 0.05}s;">
+              <div class="rank-number ${rankClass}">#${rank}</div>
+              <div class="rank-info" style="flex:1;">
+                <div class="rank-name">${user.username}</div>
+                <div class="rank-coins">💰 ${coinsDisplay} coins</div>
+              </div>
+              ${badgeText ? `<div class="rank-badge ${badgeClass}">${badgeText}</div>` : ''}
+            </div>
+          `;
+        }).join('');
+        
+        container.innerHTML = `<div class="leaderboard-list">${html}</div>`;
+      } catch(error) {
+        console.error('Leaderboard error:', error);
+        container.innerHTML = '<div class="leaderboard-empty"><div class="leaderboard-empty-icon">⚠️</div><p>Failed to load leaderboard</p></div>';
+      }
+    }
+
     function userSwitchTab(screenId){
-      ['home-scr','vpn-scr','history-scr','tutorial-scr','payment-settings-scr'].forEach(s => {
+      ['home-scr','vpn-scr','history-scr','leaderboard-scr','tutorial-scr','payment-settings-scr'].forEach(s => {
         const el = $(s); if(!el) return;
         const show = s === screenId;
         el.style.display = show ? 'block' : 'none';
@@ -1908,6 +2027,8 @@
       if(screenId === 'payment-settings-scr') renderPaymentSettingsPage();
       // Refresh sell form cards when returning home (in case settings changed)
       if(screenId === 'home-scr') renderSellFormPaymentCards();
+      // Load and render leaderboard
+      if(screenId === 'leaderboard-scr') renderLeaderboard();
       try{ tg.HapticFeedback.impactOccurred('light'); }catch(e){}
     }
     function openSafeLink(url){ const s = normalizeLink(url); if(!s){ showToast('Link not set.','error'); return; } window.open(s,'_blank','noopener,noreferrer'); }
