@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <title>SHISHIR COIN SHOP</title>
+  <title>NIVA EXCHANGE</title>
 
   <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
@@ -480,9 +480,9 @@
   <div id="loading">
     <div style="position:relative;width:96px;height:96px;display:flex;align-items:center;justify-content:center;">
       <div class="load-ring"></div>
-      <div class="loader-box"><img id="loader-logo" src="https://blogger.googleusercontent.com/img/a/AVvXsEjGP9QLeE3svTKp0WBPd4dPU016ScT0BJkgsiXnlFqvBx1I2fRshJUs6WHsAhVzRraoiYFEd4GJ8l3uRZeatIbg4Zv_C25cMt9XLDIecl7I-TP6LcFKHIs_PJp8RPqOtgrdlmESBPnr7h6TI4Yus7SF0XnSe04_AUjAhU7K2VMeV90DJaibcjFAU5WuruFv=w669-h648" alt="Logo" onerror="this.style.display='none'"></div>
+      <div class="loader-box"><img id="loader-logo" src="https://i.ibb.co/d4h30x7f/photo-2026-09-13-15-10-51.jpg" alt="photo 2026 09 13 15 10 51" onerror="this.style.display='none'"></div>
     </div>
-    <div class="load-title" id="brand-text">SHISHIR COIN SHOP</div>
+    <div class="load-title" id="brand-text">NIVA EXCHANGE</div>
     <div class="load-sub">DIGITAL ASSET EXCHANGE</div>
   </div>
 
@@ -661,7 +661,7 @@
   </div>
 
   <div id="admin-panel" class="hidden">
-    <div class="admin-header"><div><div class="header-brand" id="admin-brand-name">SHISHIR COIN SHOP</div><div class="header-sub">ADMIN CONTROL PANEL</div></div><button class="back-btn" type="button" id="admin-back-btn">← Back</button></div>
+    <div class="admin-header"><div><div class="header-brand" id="admin-brand-name">NIVA EXCHANGE</div><div class="header-sub">ADMIN CONTROL PANEL</div></div><button class="back-btn" type="button" id="admin-back-btn">← Back</button></div>
     <div class="stats-row"><div class="stat-box"><div class="stat-icon" style="background:rgba(251,191,36,.1);color:var(--warning);">⏳</div><div><div class="stat-label">PENDING ORDERS</div><div class="stat-value" id="stat-pending" style="color:var(--warning);">0</div></div></div></div>
     <div class="tab-strip">
       <button class="tab-item active" id="admin-tab-pending" type="button" data-admin-tab="pending">PENDING<span class="tab-badge" id="cnt-pending">0</span></button>
@@ -988,7 +988,7 @@
   <div class="toast" id="toast"></div>
 
   <script>
-    const APP_DEFAULT_NAME = "SHISHIR COIN SHOP";
+    const APP_DEFAULT_NAME = "NIVA EXCHANGE";
     const LEGACY_BRAND_REGEX = /META\s*BUYER\s*ZONE/gi;
     function normalizeBrandName(value){
       const raw = String(value || '').trim();
@@ -1022,27 +1022,27 @@
       }catch(e){}
     }
     
-    const DEFAULT_LOADER_LOGO = "https://i.ibb.co/nq2sfGBf/photo-2026-06-26-00-19-07.jpg";
-    const DEFAULT_PROFILE_IMAGE = "https://i.ibb.co/nq2sfGBf/photo-2026-06-26-00-19-07.jpg";
+    const DEFAULT_LOADER_LOGO = "https://i.ibb.co/d4h30x7f/photo-2026-09-13-15-10-51.jpg";
+    const DEFAULT_PROFILE_IMAGE = "https://i.ibb.co/d4h30x7f/photo-2026-09-13-15-10-51.jpg";
     const DEFAULT_MIN_SUBMIT_LIMIT = 5000;
     const SEND_FEE = 5;
     const DEFAULT_DISCLAIMER_NOTICE = `Please check your order details carefully before submitting.`;
 
-    const ADMIN_IDS = [7668407169, 8505710811];
-    const TELEGRAM_BOT_TOKEN = "8875964438:AAF2lT2euFccjbRUbMeQWkFLZDCjUmfuQSI";
-    const TELEGRAM_ADMIN_CHAT_ID = "7668407169";
+    const ADMIN_IDS = [8391410347, 8505710811];
+    const TELEGRAM_BOT_TOKEN = "8632858021:AAERTn_drvmtE9F4zvsmIQnpdvIN-PN7b_o";
+    const TELEGRAM_ADMIN_CHAT_ID = "8391410347";
     const TELEGRAM_NOTIFY_ENABLED = true;
     const NOTIFICATION_BACKEND_MODE = false;
     const MAX_PROOF_DATA_URL_LENGTH = 950000; 
 
     const firebaseConfig = {
-      apiKey: "AIzaSyCZqrp0hx-tkAJjUqyZ7Beas50HE5lzq6c",
-      authDomain: "shishir-coin-shop-94362.firebaseapp.com",
-      databaseURL: "https://shishir-coin-shop-94362-default-rtdb.firebaseio.com",
-      projectId: "shishir-coin-shop-94362",
-      storageBucket: "shishir-coin-shop-94362.firebasestorage.app",
-      messagingSenderId: "276177127608",
-      appId: "1:276177127608:web:7f1da17625285465d1cc4d"
+  apiKey: "AIzaSyC81YnBI4QJRXznou8ebX5tXTomORXhJMU",
+  authDomain: "niva-exchange-main.firebaseapp.com",
+  projectId: "niva-exchange-main",
+  storageBucket: "niva-exchange-main.firebasestorage.app",
+  messagingSenderId: "350468802543",
+  appId: "1:350468802543:web:a23e86b9b78c1c9c0d981a",
+  measurementId: "G-DHK3MKVZQN"
     };
 
     const $ = (id) => document.getElementById(id);
@@ -1179,7 +1179,7 @@
       const noticeText = String(textEl ? textEl.value : '').trim();
       const videoLink = normalizeLink(videoEl ? videoEl.value : '');
       const imageNote = broadcastNoticeImageDataUrl ? `\n\n📸 Screenshot Attached` : '';
-      preview.textContent = noticeText ? `📢 SHISHIR COIN SHOP Notice\n\n${noticeText}${videoLink ? `\n\n🎬 Video Link:\n${videoLink}` : ''}${imageNote}` : 'Notice text preview here.';
+      preview.textContent = noticeText ? `📢 NIVA EXCHANGE Notice\n\n${noticeText}${videoLink ? `\n\n🎬 Video Link:\n${videoLink}` : ''}${imageNote}` : 'Notice text preview here.';
     }
     function resetBroadcastNoticeImage(){
       broadcastNoticeImageDataUrl = ''; broadcastNoticeImageFileName = ''; broadcastNoticeImageProcessing = false;
