@@ -1,0 +1,2495 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>SHISHIR COIN SHOP</title>
+
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --bg:#18181b; --bg2:#09090b; --panel:#27272a; --panel2:#27272a;
+      --card:rgba(39,39,42,0.92); --card-solid:#27272a;
+      --border:#3f3f46; --border-hi:#52525b; --text:#f4f4f5; --subtext:#a1a1aa;
+      --sky:#0ea5e9; --sky-dark:#38bdf8; --sky-light:rgba(14,165,233,0.15); --sky-glow:rgba(14,165,233,0.25);
+      --purple:#a78bfa; --emerald:#34d399; --gold:#fbbf24; --danger:#f87171;
+      --success:#34d399; --success-bg:rgba(16,185,129,0.15); --warning:#fbbf24; --warning-bg:rgba(245,158,11,0.15);
+      --danger-bg:rgba(239,68,68,0.15); --gray-mid:#71717a; --gray-light:#3f3f46;
+      --shadow-sm:0 1px 3px rgba(0,0,0,0.3),0 1px 2px rgba(0,0,0,0.2);
+      --shadow-md:0 4px 12px rgba(0,0,0,0.4),0 2px 4px rgba(0,0,0,0.2);
+      --shadow-lg:0 8px 24px rgba(0,0,0,0.5),0 4px 8px rgba(0,0,0,0.3);
+      --radius-md:12px; --radius-lg:16px; --radius-xl:20px;
+    }
+
+    *{box-sizing:border-box;font-family:'Inter',sans-serif;-webkit-tap-highlight-color:transparent;outline:none;margin:0;padding:0;}
+    html,body{background:var(--bg);color:var(--text);overflow-x:hidden;min-height:100vh;}
+    body{padding:14px 13px 120px;box-shadow:inset 14px 0 24px -18px rgba(0,0,0,.55),inset -14px 0 24px -18px rgba(0,0,0,.55);}
+    button,input,select{font-family:'Inter',sans-serif;}
+    button{cursor:pointer;}
+    .hidden{display:none!important;}
+
+    #loading{position:fixed;inset:0;background:var(--bg);z-index:10000;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity .5s ease;}
+    .loader-box{width:80px;height:80px;border-radius:22px;background:var(--panel);border:2px solid var(--border);box-shadow:var(--shadow-lg);display:flex;align-items:center;justify-content:center;animation:loadPulse 1.6s ease-in-out infinite;}
+    .loader-box img{width:54px;height:54px;border-radius:14px;object-fit:cover;}
+    .load-ring{width:96px;height:96px;border-radius:50%;border:3px solid var(--border);border-top-color:var(--sky);position:absolute;animation:spin 1s linear infinite;}
+    .load-title{margin-top:22px;font-size:12px;font-weight:800;letter-spacing:4px;text-transform:uppercase;color:var(--sky-dark);text-align:center;}
+    .load-sub{margin-top:5px;font-size:9px;font-weight:600;letter-spacing:2px;color:var(--subtext);}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    @keyframes loadPulse{0%,100%{box-shadow:var(--shadow-md)}50%{box-shadow:0 0 0 8px var(--sky-glow)}}
+    @keyframes riseUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+    @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+    @keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+    /* Instant tab switching: once a screen has been shown, kill entrance-animation replay so re-opening it is 0-lag (continuous indicators like the live-status blink dot are left untouched) */
+    .no-replay-anim, .no-replay-anim *{animation-name:none!important;transition-duration:.001s!important;}
+    .no-replay-anim .s-dot.on{animation:blink 2s ease-in-out infinite!important;}
+
+    #user-panel,#admin-panel{position:relative;z-index:1;max-width:560px;margin:0 auto;animation:fadeIn .35s ease both;}
+    #cv{position:fixed;inset:0;width:100vw;height:100vh;z-index:0;pointer-events:none;display:none;}
+
+    .profile-card{background:#6F527B;border-radius:var(--radius-xl);padding:18px 16px;display:flex;align-items:center;gap:14px;box-shadow:0 6px 20px rgba(111,82,123,.35);margin-bottom:12px;animation:riseUp .45s ease both;}
+    .user-avatar{width:56px;height:56px;border-radius:14px;border:2px solid rgba(255,255,255,.5);object-fit:cover;flex-shrink:0;box-shadow:0 2px 10px rgba(0,0,0,.15);background:var(--sky-light);}
+    .profile-name{font-size:18px;font-weight:800;color:#fff;line-height:1.1;}
+    .profile-tag{font-size:11px;font-weight:600;color:rgba(255,255,255,.75);margin-top:2px;}
+    .approved-chip{margin-left:auto;flex-shrink:0;background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.35);border-radius:12px;padding:10px 14px;text-align:center;backdrop-filter:blur(10px);}
+    .approved-chip small{font-size:8px;font-weight:800;letter-spacing:2px;color:rgba(255,255,255,.8);display:block;margin-bottom:2px;}
+    .approved-chip b{font-size:22px;font-weight:900;color:#fff;}
+
+    .sec-title{font-size:10px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:var(--sky-dark);padding:4px 0 10px 2px;display:flex;align-items:center;gap:7px;}
+    .sec-title::before{content:'';display:block;width:3px;height:14px;border-radius:2px;background:var(--sky);flex-shrink:0;}
+    .qa-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;}
+    .qa-btn{background:var(--panel2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:12px 14px;display:flex;align-items:center;gap:10px;transition:all .15s ease;text-decoration:none;box-shadow:var(--shadow-sm);color:inherit;text-align:left;}
+    .qa-btn:active{transform:scale(.97);background:var(--gray-light);}
+    .qa-icon{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
+    .qa-main-text{font-size:13px;font-weight:700;color:var(--text);}
+    .qa-sub-text{font-size:10px;font-weight:500;color:var(--subtext);margin-top:1px;}
+    .qa-admin{background:linear-gradient(135deg,rgba(14,165,233,.1),rgba(14,165,233,.05));border-color:var(--sky);box-shadow:0 2px 8px var(--sky-glow);}
+    
+    .vpn-premium-btn{background:linear-gradient(135deg,rgba(167,139,250,.15),rgba(167,139,250,.04));border-color:var(--purple);box-shadow:0 4px 14px rgba(167,139,250,.15);}
+    .vpn-premium-btn:active{transform:scale(.98);background:rgba(167,139,250,.2);}
+
+    .coin-card{background:var(--panel2);border:1px solid var(--border);border-radius:var(--radius-xl);padding:16px;margin-bottom:10px;position:relative;overflow:hidden;box-shadow:var(--shadow-sm);transition:all .2s ease;animation:riseUp .4s ease both;}
+    .coin-card.online{cursor:pointer;}
+    .coin-card.online:active{box-shadow:0 0 0 2px var(--sky),var(--shadow-md);transform:scale(.98);}
+    .coin-card:not(.online){opacity:.6;cursor:default;}
+    .coin-card-top{display:flex;align-items:center;gap:12px;}
+    .coin-logo-wrap{width:50px;height:50px;border-radius:14px;background:var(--sky-light);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;}
+    .coin-logo-wrap img{width:100%;height:100%;object-fit:cover;border-radius:14px;}
+    .coin-name-txt{font-size:18px;font-weight:900;color:var(--text);}
+    .coin-label-txt{font-size:9px;font-weight:700;letter-spacing:1.5px;color:var(--subtext);margin-top:2px;}
+    .status-pill{margin-left:auto;flex-shrink:0;font-size:9px;font-weight:800;letter-spacing:1px;padding:4px 10px;border-radius:20px;display:flex;align-items:center;gap:5px;}
+    .status-pill.on{background:var(--success-bg);color:var(--success);border:1px solid rgba(52,211,153,.3);}
+    .status-pill.off{background:var(--danger-bg);color:var(--danger);border:1px solid rgba(248,113,113,.3);}
+    .s-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
+    .s-dot.on{background:var(--success);animation:blink 2s ease-in-out infinite;}
+    .s-dot.off{background:var(--danger);}
+    .rates-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px;}
+    .rate-cell{background:var(--gray-light);border:1px solid var(--border);border-radius:10px;padding:10px;text-align:center;}
+    .rate-cell small{font-size:8px;font-weight:800;letter-spacing:1px;color:var(--subtext);display:block;margin-bottom:4px;}
+    .rate-cell b{font-size:15px;font-weight:900;color:var(--sky-dark);}
+    .coin-tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;}
+    .ctag{font-size:9px;font-weight:700;padding:4px 10px;border-radius:20px;background:var(--sky-light);color:var(--sky-dark);border:1px solid rgba(56,189,248,.3);}
+
+    .hist-card{background:var(--panel2);border:1px solid var(--border);border-radius:var(--radius-lg);margin-bottom:10px;box-shadow:var(--shadow-sm);overflow:hidden;animation:riseUp .35s ease both;}
+    .hist-top{padding:12px 14px 10px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;gap:10px;}
+    .hist-coin-label{font-size:17px;font-weight:900;color:var(--text);display:flex;align-items:center;gap:8px;}
+    .hist-type-badge{font-size:8px;background:var(--purple);color:#fff;padding:2px 6px;border-radius:6px;font-weight:800;letter-spacing:1px;}
+    .hist-time{font-size:10px;font-weight:600;color:var(--subtext);margin-top:2px;}
+    .hist-status-badge{font-size:9px;font-weight:800;letter-spacing:1px;padding:4px 10px;border-radius:20px;white-space:nowrap;}
+    .hs-pending{background:var(--warning-bg);color:var(--warning);border:1px solid rgba(251,191,36,.3);}
+    .hs-completed,.hs-accepted{background:var(--sky-light);color:var(--sky-dark);border:1px solid rgba(56,189,248,.3);}
+    .hs-paid{background:var(--success-bg);color:var(--success);border:1px solid rgba(52,211,153,.3);}
+    .hs-rejected{background:var(--danger-bg);color:var(--danger);border:1px solid rgba(248,113,113,.3);}
+    .hist-body{padding:10px 14px 12px;}
+    .hist-info-row{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px;}
+    .hist-info-cell{background:var(--gray-light);border:1px solid var(--border);border-radius:8px;padding:7px 10px;}
+    .hic-label{font-size:8px;font-weight:800;letter-spacing:1px;color:var(--subtext);margin-bottom:2px;}
+    .hic-value{font-size:12px;font-weight:700;color:var(--text);word-break:break-word;}
+    .hist-footer{background:var(--gray-light);border-top:1px solid var(--border);padding:8px 14px;display:flex;justify-content:space-between;align-items:center;}
+    .hist-order-id{font-size:10px;font-weight:700;color:var(--subtext);}
+    .hist-payout{font-size:14px;font-weight:900;color:var(--sky-dark);}
+
+    .nav-dock{position:fixed;bottom:16px;left:14px;right:14px;max-width:560px;margin:auto;height:68px;background:var(--panel2);border:1px solid var(--border-hi);border-radius:22px;display:flex;justify-content:space-around;align-items:center;z-index:1000;box-shadow:var(--shadow-lg);}
+    .nav-tab{border:none;background:none;display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 12px;border-radius:16px;transition:all .2s ease;color:var(--subtext);}
+    .nav-icon{font-size:21px;transition:transform .2s ease;}
+    .nav-label{font-size:9px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;}
+    .nav-tab.active{color:var(--sky-dark);background:var(--sky-light);}
+    .nav-tab.active .nav-icon{transform:translateY(-3px);}
+
+    .modal-mask{position:fixed;inset:0;background:rgba(0,0,0,.72);backdrop-filter:blur(8px);display:none;align-items:flex-end;z-index:2000;}
+    .modal-mask.active{display:flex;}
+    .bottom-sheet{background:var(--panel2);border-top:2px solid var(--sky);width:100%;border-radius:24px 24px 0 0;padding:22px 18px 28px;max-height:92vh;overflow-y:auto;transform:translateY(100%);transition:transform .38s cubic-bezier(.4,0,.2,1);box-shadow:0 -8px 40px rgba(0,0,0,.5);}
+    .modal-mask.active .bottom-sheet{transform:translateY(0);}
+    .sheet-handle{width:40px;height:4px;background:var(--border-hi);border-radius:2px;margin:0 auto 18px;}
+    .sheet-title{font-size:20px;font-weight:900;color:var(--text);}
+    .x-btn{background:var(--gray-light);border:1px solid var(--border);width:34px;height:34px;border-radius:50%;color:var(--text);font-size:13px;display:flex;align-items:center;justify-content:center;transition:all .15s;}
+    .x-btn:active{transform:scale(.9);}
+    
+    .transfer-id-box{background:var(--sky-light);border:1px solid rgba(56,189,248,.3);border-radius:var(--radius-lg);padding:14px;text-align:center;margin-bottom:14px;}
+    .transfer-id-box small{font-size:8px;font-weight:800;letter-spacing:2px;color:var(--sky-dark);display:block;margin-bottom:5px;}
+    .tid-value{font-size:20px;font-weight:900;color:var(--sky-dark);letter-spacing:1px;margin-bottom:8px;word-break:break-all;}
+    .copy-btn{background:var(--sky);color:#fff;border:none;padding:7px 18px;border-radius:9px;font-size:10px;font-weight:800;letter-spacing:1px;transition:all .15s;}
+    .copy-btn:active{transform:scale(.95);background:var(--sky-dark);}
+    .form-input{width:100%;background:var(--gray-light);border:1px solid var(--border);border-radius:var(--radius-md);padding:13px 14px;font-size:13px;font-weight:600;color:var(--text);margin-bottom:9px;transition:all .2s;}
+    .form-input:focus{border-color:var(--sky);box-shadow:0 0 0 3px var(--sky-glow);background:var(--panel2);}
+    .form-input option{background:var(--panel2);}
+    .form-input::placeholder{color:var(--gray-mid);}
+    .form-row{display:grid;grid-template-columns:1fr 1.5fr;gap:9px;}
+    
+    .calc-box{background:var(--gray-light);border:1px solid var(--border);border-radius:var(--radius-md);padding:13px;margin-bottom:13px;}
+    .calc-row{display:flex;justify-content:space-between;font-size:13px;margin-bottom:7px;align-items:center;}
+    .calc-row:last-child{margin-bottom:0;font-size:16px;font-weight:900;}
+    .calc-divider{height:1px;background:var(--border);margin:9px 0;}
+    .btn-primary{width:100%;background:linear-gradient(135deg,var(--sky),var(--sky-dark));border:none;padding:16px;border-radius:14px;font-size:14px;font-weight:900;letter-spacing:.5px;color:#fff;transition:all .2s ease;box-shadow:0 6px 20px rgba(2,132,199,.3);}
+    .btn-primary:active{transform:scale(.97);}
+    .btn-primary:disabled{opacity:.6;cursor:not-allowed;}
+
+    .vpn-pay-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;}
+    .vpn-pay-card{background:var(--gray-light);border:2px solid var(--border);border-radius:var(--radius-md);padding:12px;text-align:center;cursor:pointer;transition:all .2s ease;display:flex;flex-direction:column;align-items:center;gap:6px;}
+    .vpn-pay-card img{width:40px;height:40px;border-radius:10px;object-fit:cover;background:#fff;}
+    .vpn-pay-card b{font-size:12px;color:var(--text);font-weight:800;display:block;}
+    .vpn-pay-card.active{border-color:var(--sky);background:var(--sky-light);box-shadow:0 4px 12px var(--sky-glow);}
+
+    .vpn-plan-card{background:var(--gray-light);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;transition:all .15s;}
+    .vpn-plan-card:active{transform:scale(.98);background:var(--sky-light);border-color:var(--sky);}
+    .vpn-plan-card span{font-size:14px;font-weight:800;color:var(--text);}
+    .vpn-plan-card b{font-size:16px;font-weight:900;color:var(--sky-dark);}
+
+    .confirm-mask{position:fixed;inset:0;background:rgba(0,0,0,.82);backdrop-filter:blur(10px);display:none;justify-content:center;align-items:center;z-index:3000;padding:18px;}
+    .confirm-mask.active{display:flex;}
+    .confirm-box{background:var(--panel2);border:1px solid var(--border);border-radius:24px;padding:26px;width:100%;max-width:360px;box-shadow:var(--shadow-lg);animation:riseUp .25s ease both;}
+    .confirm-icon{font-size:40px;text-align:center;margin-bottom:10px;}
+    .confirm-title{font-size:17px;font-weight:900;text-align:center;margin-bottom:16px;}
+    .confirm-row{display:flex;justify-content:space-between;font-size:12px;margin-bottom:9px;padding-bottom:9px;border-bottom:1px solid var(--border);gap:10px;}
+    .confirm-row span:first-child{color:var(--subtext);font-weight:600;}
+    .confirm-row span:last-child{font-weight:800;color:var(--text);text-align:right;}
+    .confirm-total{display:flex;justify-content:space-between;font-size:17px;font-weight:900;border-top:2px solid var(--border);padding-top:12px;margin-top:4px;gap:10px;}
+    .confirm-btns{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:18px;}
+    .btn-back{background:var(--gray-light);border:1px solid var(--border);color:var(--text);padding:13px;border-radius:12px;font-size:13px;font-weight:700;transition:all .15s;}
+    .btn-go{background:linear-gradient(135deg,var(--sky),var(--sky-dark));border:none;color:#fff;padding:13px;border-radius:12px;font-size:13px;font-weight:900;transition:all .15s;box-shadow:0 4px 14px rgba(2,132,199,.3);}
+    .btn-back:active,.btn-go:active{transform:scale(.97);}
+
+    .admin-header{display:flex;align-items:center;justify-content:space-between;background:rgba(39,39,42,.85);border:1px solid var(--border);border-radius:24px;padding:14px 18px;margin-bottom:16px;backdrop-filter:blur(20px);box-shadow:0 8px 30px rgba(0,0,0,.4);}
+    .header-brand{font-size:14px;font-weight:900;color:var(--sky-dark);letter-spacing:1px;}
+    .header-sub{font-size:10px;font-weight:700;color:var(--subtext);letter-spacing:1.5px;margin-top:2px;}
+    .back-btn{background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:14px;padding:9px 16px;color:var(--subtext);font-size:13px;font-weight:800;}
+    .stats-row{display:grid;grid-template-columns:1fr;gap:10px;margin-bottom:14px;}
+    .stat-box{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:16px 20px;display:flex;align-items:center;gap:14px;backdrop-filter:blur(16px);box-shadow:0 4px 20px rgba(0,0,0,.3);}
+    .stat-icon{width:44px;height:44px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;}
+    .stat-label{font-size:10px;font-weight:800;letter-spacing:1.5px;color:var(--subtext);}
+    .stat-value{font-size:26px;font-weight:900;line-height:1;margin-top:3px;}
+    .tab-strip{display:flex;background:rgba(0,0,0,.3);border-radius:18px;padding:5px;gap:4px;margin-bottom:14px;overflow-x:auto;scrollbar-width:none;border:1px solid var(--border);}
+    .tab-strip::-webkit-scrollbar{display:none;}
+    .tab-item{flex:1;min-width:72px;padding:10px 8px;border-radius:14px;border:none;background:none;color:var(--subtext);font-size:10px;font-weight:900;letter-spacing:.5px;transition:all .2s ease;display:flex;flex-direction:column;align-items:center;gap:3px;white-space:nowrap;}
+    .tab-item.active{background:linear-gradient(135deg,rgba(14,165,233,.25),rgba(56,189,248,.12));color:var(--sky-dark);border:1px solid rgba(56,189,248,.2);box-shadow:0 4px 14px rgba(56,189,248,.1);}
+    .tab-badge{background:rgba(255,255,255,.08);color:var(--text);font-size:9px;font-weight:800;padding:1px 7px;border-radius:8px;min-width:20px;text-align:center;}
+    .tab-item.active .tab-badge{background:rgba(56,189,248,.15);color:var(--sky-dark);}
+    
+    .order-card{background:var(--card);border:1px solid var(--border);border-radius:22px;padding:16px;margin-bottom:12px;backdrop-filter:blur(16px);box-shadow:0 4px 20px rgba(0,0,0,.3);animation:riseUp .35s ease both;border-left:4px solid var(--sky);position:relative;}
+    .order-card.pending{border-left-color:var(--warning);}
+    .order-card.approved,.order-card.completed{border-left-color:var(--sky-dark);}
+    .order-card.payment{border-left-color:var(--gold);}
+    .order-card.paid{border-left-color:var(--emerald);}
+    .order-card.rejected{border-left-color:var(--danger);}
+    .order-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;gap:10px;}
+    .order-user{font-size:15px;font-weight:900;}
+    .order-id{font-size:10px;color:var(--subtext);font-weight:700;margin-top:2px;}
+    .order-badge{font-size:9px;font-weight:900;letter-spacing:1.5px;padding:4px 10px;border-radius:8px;white-space:nowrap;}
+    .badge-pending{background:rgba(251,191,36,.12);color:var(--gold);border:1px solid rgba(251,191,36,.25);}
+    .badge-approved,.badge-completed{background:rgba(56,189,248,.08);color:var(--sky-dark);border:1px solid rgba(56,189,248,.2);}
+    .badge-payment-pending{background:rgba(251,191,36,.12);color:var(--gold);border:1px solid rgba(251,191,36,.25);}
+    .badge-paid{background:rgba(52,211,153,.12);color:var(--emerald);border:1px solid rgba(52,211,153,.28);}
+    .badge-rejected{background:rgba(248,113,113,.08);color:var(--danger);border:1px solid rgba(248,113,113,.2);}
+    
+    .info-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;}
+    .info-cell{background:rgba(255,255,255,.02);border:1px solid var(--border);border-radius:12px;padding:9px 11px;}
+    .info-cell small{font-size:8px;font-weight:900;letter-spacing:1.5px;color:var(--subtext);display:block;margin-bottom:3px;}
+    .info-cell b{font-size:12px;font-weight:800;color:var(--text);word-break:break-word;transition:all 0.15s ease;}
+    .info-cell b:active{transform:scale(0.98); opacity:0.8;}
+    .info-copy-btn{margin-top:7px;background:rgba(14,165,233,.12);border:1px solid rgba(56,189,248,.35);color:var(--sky-dark);padding:6px 10px;border-radius:9px;font-size:9px;font-weight:900;letter-spacing:.6px;line-height:1;display:inline-flex;align-items:center;gap:4px;transition:all .15s ease;}
+    .info-copy-btn:active{transform:scale(.96);background:rgba(56,189,248,.22);}
+    .info-copy-btn[disabled]{opacity:.45;cursor:not-allowed;}
+    
+    .proof-upload{background:rgba(14,165,233,.06);border:1px dashed rgba(56,189,248,.35);border-radius:var(--radius-md);padding:12px;margin-bottom:13px;}
+    .proof-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:9px;}
+    .proof-head span{font-size:12px;font-weight:900;color:var(--text);letter-spacing:.3px;}
+    .proof-head small{font-size:8px;font-weight:900;text-transform:uppercase;letter-spacing:1px;color:var(--sky-dark);white-space:nowrap;}
+    .proof-select-btn{width:100%;background:rgba(56,189,248,.14);border:1px solid rgba(56,189,248,.35);color:var(--sky-dark);padding:12px;border-radius:12px;font-size:12px;font-weight:900;letter-spacing:.4px;transition:all .15s ease;}
+    .proof-select-btn:active{transform:scale(.98);background:rgba(56,189,248,.24);}
+    .proof-preview{margin-top:10px;background:rgba(0,0,0,.22);border:1px solid var(--border);border-radius:12px;padding:9px;display:grid;grid-template-columns:52px 1fr auto;gap:10px;align-items:center;}
+    .proof-preview img{width:52px;height:52px;object-fit:cover;border-radius:10px;border:1px solid var(--border-hi);background:#000;}
+    .proof-preview-meta b{font-size:11px;font-weight:900;color:var(--text);display:block;word-break:break-word;}
+    .proof-preview-meta small{font-size:9px;font-weight:700;color:var(--subtext);display:block;margin-top:2px;}
+    .proof-remove-btn{background:rgba(248,113,113,.1);border:1px solid rgba(248,113,113,.25);color:var(--danger);padding:8px 10px;border-radius:10px;font-size:10px;font-weight:900;}
+    .proof-view-btn{flex:1;background:rgba(56,189,248,.12);border:1px solid rgba(56,189,248,.35);color:var(--sky-dark);padding:11px 12px;border-radius:13px;font-size:12px;font-weight:900;letter-spacing:.4px;}
+    .proof-view-btn[disabled]{opacity:.45;color:var(--subtext);border-color:var(--border);background:rgba(255,255,255,.04);}
+    .proof-viewer-box{background:var(--panel2);border:1px solid var(--border);border-radius:24px;padding:16px;width:100%;max-width:430px;max-height:92vh;overflow:auto;box-shadow:var(--shadow-lg);animation:riseUp .25s ease both;}
+    .proof-viewer-img{width:100%;max-height:70vh;object-fit:contain;border-radius:16px;background:#000;border:1px solid var(--border);display:block;}
+
+    .notice-box{background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.28);border-radius:var(--radius-md);padding:12px 13px;margin:0 0 13px;box-shadow:var(--shadow-sm);}
+    .notice-box.confirm{margin:12px 0 14px;background:rgba(251,191,36,.075);}
+    .notice-title{display:flex;align-items:center;gap:7px;font-size:10px;font-weight:900;letter-spacing:.9px;text-transform:uppercase;color:var(--warning);margin-bottom:7px;}
+    .notice-text{font-size:11px;font-weight:700;line-height:1.55;color:var(--text);white-space:pre-wrap;word-break:break-word;}
+    .admin-textarea{min-height:110px;resize:vertical;line-height:1.55;white-space:pre-wrap;}
+    
+    .order-actions{display:flex;gap:8px;flex-wrap:wrap;}
+    .btn-accept{flex:2;background:linear-gradient(135deg,var(--emerald),rgba(52,211,153,.7));border:none;color:#000;padding:11px;border-radius:13px;font-size:12px;font-weight:900;letter-spacing:.5px;}
+    .btn-reject{flex:1;background:rgba(248,113,113,.08);border:1px solid rgba(248,113,113,.25);color:var(--danger);padding:11px;border-radius:13px;font-size:12px;font-weight:900;}
+    .btn-paid{flex:2;background:linear-gradient(135deg,var(--emerald),rgba(52,211,153,.72));border:none;color:#000;padding:11px;border-radius:13px;font-size:12px;font-weight:900;letter-spacing:.5px;}
+    .btn-payment-proof{flex:.9;background:rgba(56,189,248,.12);border:1px solid rgba(56,189,248,.35);color:var(--sky-dark);padding:11px 10px;border-radius:13px;font-size:11px;font-weight:900;letter-spacing:.3px;}
+    .btn-payment-proof.has-proof{background:var(--success-bg);border-color:rgba(52,211,153,.35);color:var(--success);}
+    .btn-del{background:rgba(255,255,255,.05);border:1px solid var(--border);color:var(--subtext);padding:11px 14px;border-radius:13px;font-size:11px;font-weight:800;}
+    
+    .payment-tools{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:12px;margin-bottom:12px;display:grid;grid-template-columns:1fr 150px;gap:9px;backdrop-filter:blur(16px);box-shadow:var(--shadow-sm);}
+    .payment-tools .form-input{margin-bottom:0;}
+    .payment-meta{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;}
+    .payment-pill{font-size:9px;font-weight:800;letter-spacing:.7px;border-radius:20px;padding:5px 9px;background:rgba(255,255,255,.04);border:1px solid var(--border);color:var(--subtext);}
+    .payment-pill.good{background:var(--success-bg);border-color:rgba(52,211,153,.28);color:var(--success);}
+    .payment-pill.warn{background:var(--warning-bg);border-color:rgba(251,191,36,.28);color:var(--warning);}
+    
+    .settings-section{display:none;}
+    .settings-group{background:var(--card);border:1px solid var(--border);border-radius:24px;padding:20px;margin-bottom:14px;backdrop-filter:blur(16px);animation:riseUp .35s ease both;}
+    .settings-group-title{display:flex;align-items:center;gap:10px;font-size:13px;font-weight:900;letter-spacing:1.5px;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--border);}
+    .stitle-bar{width:3px;height:16px;border-radius:2px;flex-shrink:0;}
+    .form-row2{display:grid;grid-template-columns:1fr 1fr;gap:9px;}
+    
+    .btn-action{width:100%;border:none;padding:12px;border-radius:14px;font-size:13px;font-weight:900;transition:all .15s;letter-spacing:.5px;}
+    .btn-blue{background:linear-gradient(135deg,var(--sky),rgba(14,165,233,.7));color:#fff;box-shadow:0 6px 20px var(--sky-glow);}
+    .btn-cyan{background:linear-gradient(135deg,var(--sky-dark),rgba(56,189,248,.7));color:#000;box-shadow:0 6px 20px rgba(56,189,248,.25);}
+    .btn-emerald{background:linear-gradient(135deg,var(--emerald),rgba(52,211,153,.7));color:#000;}
+    .btn-danger{background:rgba(248,113,113,.08);border:1px solid rgba(248,113,113,.25);color:var(--danger);}
+    
+    .coin-box{background:rgba(0,0,0,.25);border:1px solid var(--border);border-radius:18px;padding:14px;margin-bottom:12px;border-left:3px solid var(--emerald);animation:riseUp .3s ease both;}
+    .coin-box.offline{border-left-color:var(--danger);}
+    .coin-box-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;}
+    .coin-name-row{display:flex;align-items:center;gap:8px;}
+    .coin-logo-sm{width:30px;height:30px;border-radius:9px;object-fit:cover;background:var(--sky-light);}
+    .coin-key{font-size:16px;font-weight:900;color:var(--sky-dark);}
+    
+    .switch{position:relative;display:inline-block;width:40px;height:22px;flex-shrink:0;}
+    .switch input{opacity:0;width:0;height:0;}
+    .slider{position:absolute;inset:0;background:rgba(255,255,255,.1);border-radius:34px;transition:.35s;border:1px solid var(--border);}
+    .slider::before{position:absolute;content:"";height:16px;width:16px;left:3px;bottom:3px;background:#e4e4e7;border-radius:50%;transition:.35s;}
+    input:checked+.slider{background:var(--emerald);border-color:var(--emerald);box-shadow:0 0 10px rgba(52,211,153,.25);}
+    input:checked+.slider::before{transform:translateX(18px);background:#fff;}
+    
+    .user-row,.pay-row{display:flex;justify-content:space-between;align-items:center;padding:11px 14px;background:rgba(0,0,0,.2);border-radius:14px;margin-bottom:8px;border:1px solid var(--border);gap:10px;}
+    .user-name,.pay-name{font-size:14px;font-weight:800;display:flex;align-items:center;gap:8px;}
+    .user-amount{font-size:12px;font-weight:700;color:var(--sky-dark);margin-top:2px;}
+    .del-btn{background:none;border:none;color:var(--danger);font-size:12px;font-weight:900;padding:6px 10px;border-radius:9px;}
+    .pay-controls{display:flex;gap:10px;align-items:center;}
+    .add-form{background:rgba(0,0,0,.2);border:1px dashed rgba(56,189,248,.2);border-radius:16px;padding:14px;margin-bottom:14px;}
+    
+    .tutorial-card{background:var(--panel2);border:1px solid var(--border);border-radius:var(--radius-xl);padding:12px;margin-bottom:12px;box-shadow:var(--shadow-sm);animation:riseUp .35s ease both;overflow:hidden;}
+    .tutorial-frame{position:relative;width:100%;padding-top:56.25%;border-radius:14px;overflow:hidden;background:#000;border:1px solid var(--border);}
+    .tutorial-frame iframe{position:absolute;inset:0;width:100%;height:100%;border:0;display:block;}
+    .tutorial-meta{padding:12px 2px 2px;}
+    .tutorial-title{font-size:15px;font-weight:900;color:var(--text);line-height:1.35;word-break:break-word;}
+    .tutorial-date{font-size:10px;font-weight:700;color:var(--subtext);margin-top:4px;letter-spacing:.4px;}
+    
+    .tutorial-admin-card{background:rgba(0,0,0,.25);border:1px solid var(--border);border-radius:18px;padding:14px;margin-bottom:12px;border-left:3px solid var(--sky-dark);animation:riseUp .3s ease both;}
+    .tutorial-admin-card.offline{border-left-color:var(--danger);opacity:.82;}
+    .tutorial-admin-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px;}
+    .tutorial-admin-title{font-size:14px;font-weight:900;color:var(--sky-dark);word-break:break-word;}
+    .tutorial-admin-sub{font-size:10px;font-weight:700;color:var(--subtext);margin-top:2px;word-break:break-all;}
+    .tutorial-admin-actions{display:grid;grid-template-columns:1fr auto;gap:9px;align-items:center;margin-top:8px;}
+
+    #access-denied{position:fixed;inset:0;background:var(--bg);z-index:10000;display:none;align-items:center;justify-content:center;padding:24px;}
+    .denied-box{background:rgba(39,39,42,.95);border:1px solid rgba(248,113,113,.3);border-radius:32px;padding:36px 30px;text-align:center;width:100%;max-width:340px;box-shadow:0 0 60px rgba(248,113,113,.15),0 30px 60px rgba(0,0,0,.8);animation:riseUp .5s ease both;}
+    .denied-icon{font-size:56px;margin-bottom:14px;filter:drop-shadow(0 0 20px rgba(248,113,113,.6));}
+    .denied-title{font-size:22px;font-weight:900;color:var(--danger);margin-bottom:10px;}
+    .denied-text{font-size:13px;color:var(--subtext);line-height:1.65;margin-bottom:22px;}
+    
+    .toast{position:fixed;bottom:108px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--gray-light);border:1px solid var(--border);border-radius:12px;padding:11px 20px;font-size:12px;font-weight:700;color:var(--text);z-index:9000;opacity:0;transition:all .3s ease;white-space:nowrap;pointer-events:none;box-shadow:var(--shadow-lg);max-width:92vw;overflow:hidden;text-overflow:ellipsis;}
+    .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+    .toast.admin{top:20px;bottom:auto;transform:translateX(-50%) translateY(-20px);}
+    .toast.admin.show{transform:translateX(-50%) translateY(0);}
+    
+    .empty-state{text-align:center;padding:40px 20px;color:var(--subtext);font-size:13px;font-weight:600;}
+    .empty-icon{font-size:36px;margin-bottom:10px;opacity:.4;}
+    ::-webkit-scrollbar{width:4px;}
+    ::-webkit-scrollbar-track{background:transparent;}
+    ::-webkit-scrollbar-thumb{background:var(--border-hi);border-radius:2px;}
+
+    .settings-shell{animation:riseUp .35s ease both;}
+    .settings-page.hidden{display:none!important;}
+    .settings-main-head{background:var(--card);border:1px solid var(--border);border-radius:24px;padding:18px;margin-bottom:14px;box-shadow:var(--shadow-sm);}
+    .settings-main-title{font-size:20px;font-weight:900;color:var(--text);line-height:1.15;}
+    .settings-main-sub{font-size:11px;font-weight:700;color:var(--subtext);margin-top:6px;line-height:1.5;}
+    .settings-menu-grid{display:grid;grid-template-columns:1fr;gap:10px;margin-bottom:14px;}
+    
+    .settings-module-card{width:100%;border:1px solid var(--border);background:linear-gradient(135deg,rgba(39,39,42,.95),rgba(24,24,27,.95));border-radius:20px;padding:15px 14px;display:grid;grid-template-columns:44px 1fr auto;align-items:center;gap:12px;text-align:left;color:var(--text);box-shadow:var(--shadow-sm);transition:all .18s ease;}
+    .settings-module-card:active{transform:scale(.98);border-color:var(--sky);box-shadow:0 0 0 2px var(--sky-glow),var(--shadow-md);}
+    .settings-module-icon{width:44px;height:44px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;border:1px solid rgba(255,255,255,.05);}
+    .settings-module-title{font-size:14px;font-weight:900;color:var(--text);letter-spacing:.2px;}
+    .settings-module-desc{font-size:10px;font-weight:650;color:var(--subtext);margin-top:3px;line-height:1.35;}
+    .settings-module-path{display:none!important;}
+    
+    .user-tracking-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:12px;}
+    .user-track-stat{background:rgba(255,255,255,.035);border:1px solid var(--border);border-radius:14px;padding:12px;text-align:center;}
+    .user-track-stat small{font-size:8px;font-weight:900;letter-spacing:1.2px;color:var(--subtext);display:block;margin-bottom:4px;text-transform:uppercase;}
+    .user-track-stat b{font-size:22px;font-weight:900;color:var(--sky-dark);line-height:1;}
+    .user-track-actions{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:12px;}
+    
+    .tracked-user-list,.notice-user-select-list{display:grid;gap:8px;margin-top:10px;}
+    .user-tracking-search{margin-bottom:10px;}
+    .tracked-user-card,.notice-user-check{background:rgba(0,0,0,.18);border:1px solid var(--border);border-radius:14px;padding:11px 12px;}
+    .tracked-user-card{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;}
+    .tracked-user-name{font-size:13px;font-weight:900;color:var(--text);word-break:break-word;}
+    .tracked-user-meta{font-size:9px;font-weight:700;color:var(--subtext);margin-top:3px;line-height:1.45;word-break:break-word;}
+    .tracked-user-status{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px;}
+    
+    .mini-pill{font-size:8px;font-weight:900;letter-spacing:.7px;border-radius:20px;padding:4px 7px;border:1px solid var(--border);background:rgba(255,255,255,.04);color:var(--subtext);text-transform:uppercase;}
+    .mini-pill.good{background:var(--success-bg);border-color:rgba(52,211,153,.28);color:var(--success);}
+    .mini-pill.warn{background:var(--warning-bg);border-color:rgba(251,191,36,.28);color:var(--warning);}
+    .mini-pill.bad{background:var(--danger-bg);border-color:rgba(248,113,113,.28);color:var(--danger);}
+    .tracked-user-controls{display:grid;grid-template-columns:1fr;gap:7px;min-width:88px;}
+    
+    .btn-small{border:none;border-radius:10px;padding:8px 9px;font-size:9px;font-weight:900;letter-spacing:.4px;line-height:1.1;}
+    .btn-small.blue{background:rgba(56,189,248,.14);border:1px solid rgba(56,189,248,.35);color:var(--sky-dark);}
+    .btn-small.green{background:var(--success-bg);border:1px solid rgba(52,211,153,.28);color:var(--success);}
+    .btn-small.red{background:rgba(248,113,113,.1);border:1px solid rgba(248,113,113,.25);color:var(--danger);}
+    .btn-small.gray{background:rgba(255,255,255,.055);border:1px solid var(--border);color:var(--subtext);}
+    
+    .notice-target-box{background:rgba(56,189,248,.06);border:1px solid rgba(56,189,248,.22);border-radius:var(--radius-md);padding:12px;margin-bottom:12px;}
+    .notice-target-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;}
+    .notice-target-option{background:rgba(0,0,0,.18);border:1px solid var(--border);border-radius:12px;padding:10px;font-size:11px;font-weight:900;color:var(--text);display:flex;align-items:center;gap:8px;}
+    .notice-target-option input{accent-color:var(--sky);}
+    .notice-user-check{display:grid;grid-template-columns:auto 1fr;gap:9px;align-items:flex-start;cursor:pointer;}
+    .notice-user-check input{margin-top:2px;accent-color:var(--sky);}
+    .notice-user-check.disabled{opacity:.55;cursor:not-allowed;}
+    .notice-user-check.disabled input{cursor:not-allowed;}
+    
+    @media(max-width:380px){.user-tracking-grid,.user-track-actions,.notice-target-row{grid-template-columns:1fr}.tracked-user-card{grid-template-columns:1fr}.tracked-user-controls{grid-template-columns:1fr 1fr;min-width:0}}
+    .settings-module-arrow{font-size:20px;color:var(--subtext);font-weight:900;}
+    .settings-page-head{background:var(--card);border:1px solid var(--border);border-radius:22px;padding:14px;margin-bottom:14px;box-shadow:var(--shadow-sm);}
+    .settings-breadcrumb{font-size:10px;font-weight:800;letter-spacing:.6px;color:var(--subtext);margin-bottom:10px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
+    .settings-breadcrumb span:last-child{color:var(--sky-dark);}
+    .settings-page-title-row{display:flex;justify-content:space-between;align-items:center;gap:12px;}
+    .settings-page-title{font-size:18px;font-weight:900;color:var(--text);line-height:1.2;}
+    .settings-back-inline{background:rgba(56,189,248,.1);border:1px solid rgba(56,189,248,.28);color:var(--sky-dark);padding:9px 12px;border-radius:12px;font-size:11px;font-weight:900;white-space:nowrap;border:none;}
+    .settings-back-inline:active{transform:scale(.97);}
+    @media(max-width:380px){.settings-module-card{grid-template-columns:38px 1fr auto;padding:13px 12px}.settings-module-icon{width:38px;height:38px;border-radius:12px}.settings-page-title-row{align-items:flex-start;flex-direction:column}.settings-back-inline{width:100%;}}
+    @media(max-width:380px){.profile-card{padding:14px 12px;gap:10px}.approved-chip{padding:8px 10px}.form-row,.form-row2,.info-grid,.hist-info-row,.tutorial-admin-actions{grid-template-columns:1fr}.proof-preview{grid-template-columns:44px 1fr}.proof-remove-btn{grid-column:1/-1}.nav-tab{padding:8px 7px}.qa-grid{grid-template-columns:1fr}}
+
+    /* ===== SELL COIN BUTTON (user panel coin cards) ===== */
+    .sell-coin-btn{width:100%;margin-top:12px;background:linear-gradient(135deg,rgba(52,211,153,.18),rgba(52,211,153,.07));border:1px solid rgba(52,211,153,.4);color:var(--emerald);padding:12px;border-radius:12px;font-size:13px;font-weight:900;letter-spacing:.5px;transition:all .18s ease;display:flex;align-items:center;justify-content:center;gap:8px;}
+    .sell-coin-btn:active{background:rgba(52,211,153,.28);transform:scale(.98);}
+
+    /* ===== DRAG HANDLE (admin coin list) ===== */
+    .drag-handle{width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-size:18px;color:var(--subtext);cursor:grab;border-radius:8px;background:rgba(255,255,255,.04);border:1px solid var(--border);flex-shrink:0;transition:all .15s;touch-action:none;user-select:none;}
+    .drag-handle:hover{background:var(--sky-light);color:var(--sky-dark);border-color:rgba(56,189,248,.35);}
+    .drag-handle:active{cursor:grabbing;}
+    .coin-box[data-coin-key].drag-over-top{border-top:3px solid var(--sky)!important;}
+    .coin-box[data-coin-key].drag-over-bottom{border-bottom:3px solid var(--sky)!important;}
+
+    /* ===== COIN DETAIL FULL-SCREEN MODAL ===== */
+    .coin-detail-mask{position:fixed;inset:0;background:var(--bg);z-index:3500;display:none;overflow-y:auto;-webkit-overflow-scrolling:touch;}
+    .coin-detail-mask.active{display:block;animation:fadeIn .22s ease both;}
+    .coin-detail-page{padding:16px 16px 100px;max-width:560px;margin:0 auto;width:100%;}
+    .cd-back-row{display:flex;align-items:center;gap:10px;margin-bottom:20px;padding-top:4px;}
+    .cd-back-btn{background:rgba(52,211,153,.1);border:1px solid rgba(52,211,153,.3);color:var(--emerald);width:36px;height:36px;border-radius:50%;font-size:16px;display:flex;align-items:center;justify-content:center;transition:all .15s;flex-shrink:0;}
+    .cd-back-btn:active{transform:scale(.9);background:rgba(52,211,153,.25);}
+    .cd-back-label{font-size:13px;font-weight:600;color:var(--subtext);}
+    .cd-logo-wrap{width:80px;height:80px;border-radius:22px;background:rgba(52,211,153,.14);border:2px solid rgba(52,211,153,.35);display:flex;align-items:center;justify-content:center;overflow:hidden;margin:0 auto 16px;box-shadow:0 0 0 6px rgba(52,211,153,.06);}
+    .cd-logo-wrap img{width:100%;height:100%;object-fit:cover;border-radius:20px;}
+    .cd-coin-name{font-size:26px;font-weight:900;color:var(--text);text-align:center;margin-bottom:24px;line-height:1.2;}
+    .cd-tiers-head{display:flex;align-items:center;gap:8px;margin-bottom:12px;}
+    .cd-tiers-icon{font-size:18px;}
+    .cd-tiers-title{font-size:15px;font-weight:900;color:var(--text);}
+    .pricing-table{background:var(--panel2);border:1px solid rgba(52,211,153,.2);border-radius:16px;overflow:hidden;margin-bottom:18px;box-shadow:0 4px 20px rgba(0,0,0,.3);}
+    .pricing-head{display:grid;grid-template-columns:1fr 1fr;background:rgba(52,211,153,.14);border-bottom:1px solid rgba(52,211,153,.2);padding:11px 16px;}
+    .pricing-head span{font-size:9px;font-weight:900;letter-spacing:1.4px;color:var(--emerald);text-transform:uppercase;}
+    .pricing-head span:last-child{text-align:right;}
+    .pricing-row{display:grid;grid-template-columns:1fr 1fr;padding:13px 16px;border-top:1px solid var(--border);}
+    .pricing-row:first-child{border-top:none;}
+    .pricing-row-range{font-size:14px;font-weight:700;color:var(--text);}
+    .pricing-row-rate{font-size:19px;font-weight:900;color:var(--emerald);text-align:right;}
+    .cd-submit-btn{width:100%;background:linear-gradient(135deg,var(--emerald),rgba(16,185,129,.75));border:none;padding:16px;border-radius:14px;font-size:14px;font-weight:900;letter-spacing:.5px;color:#000;transition:all .2s ease;box-shadow:0 6px 20px rgba(52,211,153,.25);margin-bottom:14px;display:flex;align-items:center;justify-content:center;gap:10px;}
+    .cd-submit-btn:active{transform:scale(.97);}
+    .cd-tip-box{background:rgba(52,211,153,.07);border:1px solid rgba(52,211,153,.2);border-radius:14px;padding:13px 14px;display:flex;align-items:flex-start;gap:10px;}
+    .cd-tip-icon{font-size:16px;flex-shrink:0;margin-top:1px;}
+    .cd-tip-text{font-size:12px;font-weight:600;color:var(--subtext);line-height:1.55;}
+    .cd-tip-text b{color:var(--emerald);}
+
+    /* ===== TIER SECTION IN ADMIN FORM ===== */
+    .tier-section{background:rgba(14,165,233,.06);border:1px solid rgba(56,189,248,.18);border-radius:10px;padding:10px 12px;margin-bottom:8px;}
+    .tier-label{font-size:9px;font-weight:900;letter-spacing:1.5px;color:var(--sky-dark);text-transform:uppercase;margin-bottom:7px;display:flex;align-items:center;gap:6px;}
+    /* Performance hints */
+    .coin-card,.coin-box,.order-card,.hist-card{will-change:transform;contain:layout style;}
+    .coin-detail-mask{will-change:opacity;}
+
+    /* ===== GREEN GLOW PAYMENT BANNER ===== */
+    @keyframes greenGlow{0%,100%{box-shadow:0 0 10px rgba(52,211,153,.4),0 0 20px rgba(52,211,153,.2)}50%{box-shadow:0 0 20px rgba(52,211,153,.7),0 0 40px rgba(52,211,153,.35),0 0 60px rgba(52,211,153,.15)}}
+    @keyframes glowText{0%,100%{text-shadow:0 0 8px rgba(52,211,153,.6)}50%{text-shadow:0 0 16px rgba(52,211,153,1),0 0 30px rgba(52,211,153,.5)}}
+    .pay-save-banner{background:linear-gradient(135deg,rgba(52,211,153,.12),rgba(16,185,129,.06));border:1px solid rgba(52,211,153,.45);border-radius:var(--radius-xl);padding:14px 16px;margin-bottom:14px;display:flex;align-items:center;gap:12px;cursor:pointer;animation:riseUp .4s ease both;transition:all .2s ease;}
+    .pay-save-banner:active{transform:scale(.98);background:rgba(52,211,153,.2);}
+    .pay-save-icon{width:42px;height:42px;border-radius:12px;background:rgba(52,211,153,.2);border:1px solid rgba(52,211,153,.4);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;}
+    .pay-save-title{font-size:14px;font-weight:900;color:var(--emerald);letter-spacing:.3px;animation:glowText 2.5s ease-in-out infinite;}
+    .pay-save-sub{font-size:10px;font-weight:600;color:rgba(52,211,153,.7);margin-top:2px;}
+    .pay-save-arrow{margin-left:auto;font-size:18px;color:var(--emerald);flex-shrink:0;}
+
+    /* ===== PAYMENT SETTINGS SCREEN ===== */
+    .pay-settings-header{display:flex;align-items:center;gap:12px;margin-bottom:20px;}
+    .pay-settings-method-card{background:var(--panel2);border:1px solid var(--border);border-radius:var(--radius-xl);padding:16px;margin-bottom:12px;animation:riseUp .35s ease both;}
+    .pay-settings-method-head{display:flex;align-items:center;gap:12px;margin-bottom:14px;}
+    .pay-settings-method-icon{width:44px;height:44px;border-radius:12px;background:rgba(52,211,153,.12);border:1px solid rgba(52,211,153,.3);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;overflow:hidden;}
+    .pay-settings-method-icon img{width:100%;height:100%;object-fit:cover;border-radius:10px;}
+    .pay-settings-method-name{font-size:16px;font-weight:900;color:var(--text);}
+    .pay-settings-method-saved{font-size:10px;font-weight:700;color:var(--emerald);margin-top:2px;}
+    .pay-settings-save-btn{width:100%;background:linear-gradient(135deg,var(--emerald),rgba(16,185,129,.75));border:none;padding:13px;border-radius:12px;font-size:13px;font-weight:900;color:#000;transition:all .2s;letter-spacing:.3px;}
+    .pay-settings-save-btn:active{transform:scale(.98);}
+    .pay-settings-empty{text-align:center;padding:40px 20px;color:var(--subtext);font-size:13px;font-weight:600;}
+
+    /* ===== SELL FORM PAYMENT CARDS ===== */
+    .sell-pay-section{margin-bottom:9px;}
+    .sell-pay-section-title{font-size:9px;font-weight:900;letter-spacing:1.5px;color:var(--emerald);display:flex;align-items:center;gap:7px;padding:4px 0 9px 2px;}
+    .sell-pay-section-title::before{content:'';display:block;width:3px;height:12px;border-radius:2px;background:var(--emerald);flex-shrink:0;}
+    .sell-pay-card{background:var(--gray-light);border:2px solid var(--border);border-radius:var(--radius-md);padding:12px 14px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:all .18s ease;margin-bottom:7px;}
+    .sell-pay-card:active{transform:scale(.98);}
+    .sell-pay-card.active{border-color:var(--emerald);background:rgba(52,211,153,.08);box-shadow:0 0 0 1px rgba(52,211,153,.3);}
+    .sell-pay-check{width:22px;height:22px;border-radius:50%;border:2px solid var(--border);background:rgba(255,255,255,.04);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:900;color:#000;flex-shrink:0;transition:all .18s;}
+    .sell-pay-card.active .sell-pay-check{background:var(--emerald);border-color:var(--emerald);color:#000;}
+    .sell-pay-icon{width:36px;height:36px;border-radius:9px;background:rgba(255,255,255,.06);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;overflow:hidden;}
+    .sell-pay-icon img{width:100%;height:100%;object-fit:cover;border-radius:7px;}
+    .sell-pay-name{font-size:13px;font-weight:800;color:var(--text);}
+    .sell-pay-num{font-size:11px;font-weight:600;color:var(--subtext);margin-top:1px;}
+    .sell-pay-num.nosaved{color:var(--warning);}
+    .sell-pay-go{font-size:9px;font-weight:900;color:var(--sky-dark);margin-left:auto;white-space:nowrap;flex-shrink:0;background:var(--sky-light);border:1px solid rgba(56,189,248,.3);padding:4px 9px;border-radius:8px;}
+    .manage-pay-link{font-size:10px;color:var(--sky-dark);text-align:right;font-weight:800;cursor:pointer;padding:3px 0 7px;display:flex;align-items:center;justify-content:flex-end;gap:4px;transition:opacity .15s;}
+    .manage-pay-link:active{opacity:.7;}
+
+    /* ===== COIN AMOUNT K LABEL ===== */
+    .coin-k-label{font-size:9px;font-weight:900;letter-spacing:1.5px;color:var(--subtext);margin-bottom:6px;padding:0 2px;}
+    .coin-k-hint{font-size:10px;color:var(--subtext);margin-top:-6px;margin-bottom:10px;font-weight:600;padding:0 2px;}
+    .coin-k-hint b{color:var(--sky-dark);}
+    .coin-k-display{font-size:11px;font-weight:800;color:var(--emerald);}
+    /* ===== INLINE NUMBER INPUT ===== */
+    .sell-pay-inline-num{background:rgba(52,211,153,.06);border:1px dashed rgba(52,211,153,.4);border-radius:10px;padding:10px;margin-top:4px;margin-bottom:4px;}
+    .usd-badge{font-size:8px;background:rgba(251,191,36,.18);color:var(--gold);padding:2px 7px;border-radius:6px;border:1px solid rgba(251,191,36,.35);font-weight:900;letter-spacing:.5px;vertical-align:middle;margin-left:4px;}
+    .bdt-badge{font-size:8px;background:rgba(52,211,153,.15);color:var(--emerald);padding:2px 7px;border-radius:6px;border:1px solid rgba(52,211,153,.3);font-weight:900;letter-spacing:.5px;vertical-align:middle;margin-left:4px;}
+    .inline-use-btn{width:100%;background:linear-gradient(135deg,var(--emerald),rgba(16,185,129,.75));border:none;padding:10px;border-radius:9px;font-size:12px;font-weight:900;color:#000;margin-top:6px;letter-spacing:.3px;}
+  </style>
+</head>
+<body>
+  <canvas id="cv"></canvas>
+
+  <div id="loading">
+    <div style="position:relative;width:96px;height:96px;display:flex;align-items:center;justify-content:center;">
+      <div class="load-ring"></div>
+      <div class="loader-box"><img id="loader-logo" src="https://blogger.googleusercontent.com/img/a/AVvXsEjGP9QLeE3svTKp0WBPd4dPU016ScT0BJkgsiXnlFqvBx1I2fRshJUs6WHsAhVzRraoiYFEd4GJ8l3uRZeatIbg4Zv_C25cMt9XLDIecl7I-TP6LcFKHIs_PJp8RPqOtgrdlmESBPnr7h6TI4Yus7SF0XnSe04_AUjAhU7K2VMeV90DJaibcjFAU5WuruFv=w669-h648" alt="Logo" onerror="this.style.display='none'"></div>
+    </div>
+    <div class="load-title" id="brand-text">SHISHIR COIN SHOP</div>
+    <div class="load-sub">DIGITAL ASSET EXCHANGE</div>
+  </div>
+
+  <div id="user-panel">
+    <div class="profile-card">
+      <img id="pfp" src="https://i.ibb.co/PZ5B9y0x/images.jpg" class="user-avatar" alt="User" onerror="this.style.background='var(--sky-light)';this.removeAttribute('src')">
+      <div>
+        <div class="profile-name" id="u-name">—</div>
+        <div class="profile-tag" id="u-tag">@—</div>
+      </div>
+      <div class="approved-chip"><small>APPROVED</small><b id="suc-count">0</b></div>
+    </div>
+
+    <div class="sec-title">QUICK ACCESS</div>
+    <div class="qa-grid" id="quick-grid" style="animation:riseUp .4s .06s ease both;">
+      <button class="qa-btn" type="button" id="help-btn"><div class="qa-icon" style="background:var(--sky-light);color:var(--sky-dark);">🎧</div><div><div class="qa-main-text">Help Line</div><div class="qa-sub-text">24/7 Support</div></div></button>
+      <button class="qa-btn" type="button" id="channel-btn"><div class="qa-icon" style="background:rgba(124,58,237,.15);color:#a78bfa;">📢</div><div><div class="qa-main-text">Channel</div><div class="qa-sub-text">News & Updates</div></div></button>
+      <button class="qa-btn vpn-premium-btn" type="button" id="open-vpn-btn" style="grid-column:1/-1;">
+        <div class="qa-icon" style="background:var(--purple);color:#fff;">🌐</div>
+        <div><div class="qa-main-text" style="color:var(--purple);">BUY PREMIUM VPN</div><div class="qa-sub-text">High-speed secure connections</div></div>
+      </button>
+      <button class="qa-btn qa-admin hidden" type="button" id="admin-btn" style="grid-column:1/-1;"><div class="qa-icon" style="background:var(--sky-light);color:var(--sky-dark);">🛡️</div><div><div class="qa-main-text">Admin Panel</div><div class="qa-sub-text" style="color:var(--sky-dark);">RESTRICTED ACCESS</div></div></button>
+    </div>
+
+    <!-- GREEN GLOW PAYMENT BANNER -->
+    <div class="pay-save-banner" onclick="userSwitchTab('payment-settings-scr')">
+      <div class="pay-save-icon">💳</div>
+      <div style="flex:1;min-width:0;">
+        <div class="pay-save-title">SAVE YOUR PAYMENT METHOD</div>
+        <div class="pay-save-sub">Tap to save your payment numbers for faster selling</div>
+      </div>
+      <div class="pay-save-arrow">›</div>
+    </div>
+
+    <div id="home-scr">
+      <div class="sec-title" style="margin-top:18px;">LIVE MARKET <div class="s-dot on" style="margin-left:4px;width:7px;height:7px;"></div></div>
+      <div id="market-list"></div>
+    </div>
+
+    <!-- PAYMENT SETTINGS SCREEN -->
+    <div id="payment-settings-scr" style="display:none;padding-top:6px;">
+      <div class="pay-settings-header">
+        <button class="cd-back-btn" type="button" onclick="userSwitchTab('home-scr')">←</button>
+        <div>
+          <div style="font-size:18px;font-weight:900;color:var(--text);">Payment Settings</div>
+          <div style="font-size:10px;font-weight:700;color:var(--subtext);margin-top:2px;">Save your payment numbers</div>
+        </div>
+      </div>
+      <div class="notice-box" style="margin-bottom:14px;">
+        <div class="notice-title">💡 How it works</div>
+        <div class="notice-text">Save your payment number for each method below. When you sell coins, your saved numbers will auto-fill in the form.</div>
+      </div>
+      <div id="payment-settings-list"></div>
+    </div>
+
+    <div id="vpn-scr" style="display:none;padding-top:6px;">
+      <div class="sec-title" style="justify-content:space-between;width:100%;"><div style="display:flex;align-items:center;gap:7px;">PREMIUM VPN STORE</div><button type="button" class="settings-back-inline" onclick="userSwitchTab('home-scr')" style="padding:4px 8px;">← Back</button></div>
+      <div id="vpn-brand-list"></div>
+    </div>
+
+    <div id="history-scr" style="display:none;padding-top:6px;">
+      <div class="sec-title">ORDER HISTORY</div>
+      <div id="history-list"></div>
+    </div>
+
+    <div id="tutorial-scr" style="display:none;padding-top:6px;">
+      <div class="sec-title">TUTORIAL VIDEOS</div>
+      <div id="tutorial-list"></div>
+    </div>
+
+    <nav class="nav-dock" id="user-nav">
+      <button class="nav-tab active" id="tab-home" type="button" data-screen="home-scr"><span class="nav-icon">🏠</span><span class="nav-label">Market</span></button>
+      <button class="nav-tab" id="tab-hist" type="button" data-screen="history-scr"><span class="nav-icon">🕒</span><span class="nav-label">History</span></button>
+      <button class="nav-tab" id="tab-tutorial" type="button" data-screen="tutorial-scr"><span class="nav-icon">▶️</span><span class="nav-label">Tutorial</span></button>
+    </nav>
+  </div>
+
+  <div id="order-modal" class="modal-mask">
+    <div class="bottom-sheet">
+      <div class="sheet-handle"></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;"><div class="sheet-title" id="m-title">Sell COIN</div><button class="x-btn" type="button" id="close-order-btn">✕</button></div>
+      <div class="transfer-id-box"><small>⚡ SEND COIN TO THIS TRANSFER ID</small><div class="tid-value" id="admin-id">—</div><button class="copy-btn" type="button" id="copy-id-btn">⧉ COPY ID</button></div>
+      <!-- COIN AMOUNT (full coin count entered directly) -->
+      <div class="coin-k-label">💰 HOW MANY COINS DO YOU WANT TO SELL?</div>
+      <input type="number" id="c-qty" class="form-input" placeholder="e.g. 5500" inputmode="decimal" min="0" step="1">
+      <div class="coin-k-hint">Enter your full coin amount. Example: <b>5500 = 5,500 coins</b> | <b>1000000 = 1M coins</b></div>
+      <input type="text" id="c-sender" class="form-input" placeholder="Sender Username / Transfer Code">
+      <!-- Hidden fields (used by submit logic) -->
+      <select id="m-select" class="hidden"></select>
+      <input type="text" id="m-num" class="hidden">
+      <!-- PAYMENT METHOD CARDS -->
+      <div class="sell-pay-section">
+        <div class="sell-pay-section-title">💳 PAYMENT METHOD</div>
+        <div id="sell-pay-cards"></div>
+        <div class="manage-pay-link" onclick="closeOrderModal();userSwitchTab('payment-settings-scr');">⚙ Manage Payment Numbers →</div>
+      </div>
+      <div class="calc-box"><div class="calc-row"><span style="color:var(--subtext);">Coin Unit</span><span id="coin-unit-val" style="font-weight:800;" class="coin-k-display">—</span></div><div class="calc-row"><span style="color:var(--subtext);">Base Amount</span><span id="base-val" style="font-weight:800;">0.00 ৳</span></div><div class="calc-row"><span style="color:var(--danger);">Send Fee</span><span id="fee-val" style="color:var(--danger);font-weight:800;">- 5.00 ৳</span></div><div class="calc-divider"></div><div class="calc-row"><span style="color:var(--subtext);">Net Payable</span><span id="c-res" style="color:var(--sky-dark);">0.00 ৳</span></div></div>
+      <div class="proof-upload" id="proof-upload-box">
+        <input type="file" id="proof-file" accept="image/*" class="hidden">
+        <div class="proof-head"><span>📸 Proof / Screenshot</span><small>Required</small></div>
+        <button class="proof-select-btn" type="button" id="proof-select-btn">+ Upload Transfer Screenshot</button>
+        <div class="proof-preview hidden" id="proof-preview">
+          <img id="proof-preview-img" alt="Proof Screenshot Preview">
+          <div class="proof-preview-meta"><b id="proof-file-name">Screenshot selected</b><small id="proof-file-size">Ready to submit</small></div>
+          <button class="proof-remove-btn" type="button" id="proof-remove-btn">Remove</button>
+        </div>
+      </div>
+      <button class="btn-primary" type="button" id="confirm-order-btn">CONFIRM ORDER →</button>
+    </div>
+  </div>
+
+  <div id="vpn-checkout-modal" class="modal-mask z-[2500]">
+    <div class="bottom-sheet">
+      <div class="sheet-handle"></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+        <div class="sheet-title" id="vpn-checkout-title">Select Plan</div>
+        <button class="x-btn" type="button" id="close-vpn-checkout-btn">✕</button>
+      </div>
+      
+      <!-- Plan Step -->
+      <div id="vpn-step-plans">
+        <div id="vpn-plan-container"></div>
+      </div>
+
+      <!-- Payment Step -->
+      <div id="vpn-step-payment" class="hidden">
+        <div style="margin-bottom:16px;text-align:center;">
+          <b style="font-size:12px;color:var(--subtext);display:block;margin-bottom:4px;">Amount Payable</b>
+          <span id="vpn-payable-amount" style="font-size:24px;font-weight:900;color:var(--sky-dark);">0.00 ৳</span>
+        </div>
+        <div class="sec-title" style="margin-bottom:10px;">1. SELECT PAYMENT METHOD</div>
+        <div class="vpn-pay-grid" id="vpn-pay-methods-grid"></div>
+        <div id="vpn-pay-details" class="hidden">
+           <div class="transfer-id-box" style="margin-bottom:12px;"><small>SEND MONEY TO THIS NUMBER</small><div class="tid-value" id="vpn-pay-target">—</div><button class="copy-btn" type="button" onclick="copyTextValue(document.getElementById('vpn-pay-target').textContent, 'Payment Number')">⧉ COPY NUMBER</button></div>
+           <input type="text" id="vpn-pay-trx" class="form-input" placeholder="Sender Number / Transaction ID" style="text-align:center;font-weight:900;">
+           <div class="proof-upload" style="margin-bottom:14px;">
+              <input type="file" id="vpn-proof-file" accept="image/*" class="hidden">
+              <div class="proof-head"><span>📸 Proof / Screenshot</span><small>Required</small></div>
+              <button class="proof-select-btn" type="button" id="vpn-proof-select-btn">+ Upload Payment Screenshot</button>
+              <div class="proof-preview hidden" id="vpn-proof-preview">
+                <img id="vpn-proof-preview-img" alt="Proof Screenshot Preview">
+                <div class="proof-preview-meta"><b id="vpn-proof-file-name">Screenshot selected</b><small id="vpn-proof-file-size">Ready to submit</small></div>
+                <button class="proof-remove-btn" type="button" id="vpn-proof-remove-btn">Remove</button>
+              </div>
+           </div>
+           <button class="btn-primary" type="button" id="submit-vpn-order-btn">CONFIRM VPN ORDER →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="confirm-modal" class="confirm-mask z-[3000]">
+    <div class="confirm-box">
+      <div class="confirm-icon">🔐</div>
+      <div class="confirm-title">Confirm Your Order</div>
+      <div class="confirm-row"><span>Coin / Amount</span><span id="sum-amt">—</span></div>
+      <div class="confirm-row"><span>Payment Method</span><span id="sum-method">—</span></div>
+      <div class="confirm-row"><span>Payment Number</span><span id="sum-number">—</span></div>
+      <div class="confirm-row"><span>Sender ID</span><span id="sum-sender">—</span></div>
+      <div class="notice-box confirm" id="confirm-notice-box">
+        <div class="notice-title">⚠️ Disclaimer Notice</div>
+        <div class="notice-text" id="confirm-disclaimer-text">—</div>
+      </div>
+      <div class="confirm-total"><span>Total Payout</span><span id="sum-total" style="color:var(--sky-dark);">0.00 ৳</span></div>
+      <small id="fee-note" style="color:var(--danger);display:block;text-align:center;margin-top:8px;font-size:10px;font-weight:700;">5 TK Send Money Fee Deducted</small>
+      <div class="confirm-btns"><button class="btn-back" type="button" id="confirm-back-btn">← Back</button><button class="btn-go" type="button" id="submit-btn">✓ Submit</button></div>
+    </div>
+  </div>
+
+  <div id="access-denied">
+    <div class="denied-box">
+      <div class="denied-icon">⛔</div><div class="denied-title">Access Denied</div>
+      <div class="denied-text">This panel is restricted to authorized Telegram admin accounts only.</div>
+      <button class="btn-action btn-danger" type="button" id="return-user-btn">← Return to User Panel</button>
+    </div>
+  </div>
+
+  <div id="admin-panel" class="hidden">
+    <div class="admin-header"><div><div class="header-brand" id="admin-brand-name">SHISHIR COIN SHOP</div><div class="header-sub">ADMIN CONTROL PANEL</div></div><button class="back-btn" type="button" id="admin-back-btn">← Back</button></div>
+    <div class="stats-row"><div class="stat-box"><div class="stat-icon" style="background:rgba(251,191,36,.1);color:var(--warning);">⏳</div><div><div class="stat-label">PENDING ORDERS</div><div class="stat-value" id="stat-pending" style="color:var(--warning);">0</div></div></div></div>
+    <div class="tab-strip">
+      <button class="tab-item active" id="admin-tab-pending" type="button" data-admin-tab="pending">PENDING<span class="tab-badge" id="cnt-pending">0</span></button>
+      <button class="tab-item" id="admin-tab-approved" type="button" data-admin-tab="approved">APPROVED<span class="tab-badge" id="cnt-completed">0</span></button>
+      <button class="tab-item" id="admin-tab-rejected" type="button" data-admin-tab="rejected">REJECTED<span class="tab-badge" id="cnt-rejected">0</span></button>
+      <button class="tab-item" id="admin-tab-payment" type="button" data-admin-tab="payment">PAYMENT<span class="tab-badge" id="cnt-payment">0</span></button>
+      <button class="tab-item" id="admin-tab-settings" type="button" data-admin-tab="settings">⚙ SETTINGS</button>
+    </div>
+    
+    <div id="order-section">
+      <div id="payment-tools" class="payment-tools hidden">
+         <input type="search" id="payment-search" class="form-input" placeholder="Search username, coin ID, target ID">
+         <select id="payment-filter" class="form-input"><option value="pending">Pending Payment</option><option value="paid">Paid Payment</option><option value="all">All Payments</option></select>
+      </div>
+      <div id="order-list"></div>
+    </div>
+    
+    <div id="settings-section" class="settings-section">
+      <div class="settings-shell">
+        <div id="settings-main-page" class="settings-page">
+          <div class="settings-main-head">
+            <div class="settings-main-title">Settings Modules</div>
+            <div class="settings-main-sub">Choose one module to manage.</div>
+          </div>
+          <div class="settings-menu-grid">
+            <button class="settings-module-card" type="button" data-settings-module="user-management">
+              <div class="settings-module-icon" style="background:rgba(251,191,36,.1);color:var(--warning);">👥</div>
+              <div><div class="settings-module-title">User Management</div><div class="settings-module-desc">View tracked users, manage bans, and notifications.</div></div>
+              <div class="settings-module-arrow">›</div>
+            </button>
+            <button class="settings-module-card" type="button" data-settings-module="coin-management">
+              <div class="settings-module-icon" style="background:var(--sky-light);color:var(--sky-dark);">🪙</div>
+              <div><div class="settings-module-title">Coin Management</div><div class="settings-module-desc">Add coins, edit rates, set target IDs.</div></div>
+              <div class="settings-module-arrow">›</div>
+            </button>
+            <button class="settings-module-card" type="button" data-settings-module="vpn-management">
+              <div class="settings-module-icon" style="background:rgba(167,139,250,.12);color:var(--purple);">🌐</div>
+              <div><div class="settings-module-title">VPN Management</div><div class="settings-module-desc">Add VPN brands, plans, and manage stock.</div></div>
+              <div class="settings-module-arrow">›</div>
+            </button>
+            <button class="settings-module-card" type="button" data-settings-module="payment-methods">
+              <div class="settings-module-icon" style="background:var(--success-bg);color:var(--success);">💳</div>
+              <div><div class="settings-module-title">Coin Payment Methods</div><div class="settings-module-desc">Manage payment methods for coins.</div></div>
+              <div class="settings-module-arrow">›</div>
+            </button>
+            <button class="settings-module-card" type="button" data-settings-module="vpn-payment-methods">
+              <div class="settings-module-icon" style="background:var(--success-bg);color:var(--success);">💳</div>
+              <div><div class="settings-module-title">VPN Payment Methods</div><div class="settings-module-desc">Manage payment methods for VPNs.</div></div>
+              <div class="settings-module-arrow">›</div>
+            </button>
+            <button class="settings-module-card" type="button" data-settings-module="branding-links">
+              <div class="settings-module-icon" style="background:rgba(167,139,250,.12);color:var(--purple);">🔗</div>
+              <div><div class="settings-module-title">Branding & Links</div><div class="settings-module-desc">Manage app name, channel link, and help line.</div></div>
+              <div class="settings-module-arrow">›</div>
+            </button>
+            <button class="settings-module-card" type="button" data-settings-module="disclaimer-notice">
+              <div class="settings-module-icon" style="background:rgba(251,191,36,.1);color:var(--warning);">⚠️</div>
+              <div><div class="settings-module-title">Disclaimer Notice</div><div class="settings-module-desc">Edit disclaimer and send notices.</div></div>
+              <div class="settings-module-arrow">›</div>
+            </button>
+            <button class="settings-module-card" type="button" data-settings-module="tutorial-management">
+              <div class="settings-module-icon" style="background:rgba(56,189,248,.12);color:var(--sky-dark);">🎬</div>
+              <div><div class="settings-module-title">Tutorial Management</div><div class="settings-module-desc">Add and manage tutorial videos.</div></div>
+              <div class="settings-module-arrow">›</div>
+            </button>
+          </div>
+        </div>
+
+        <div id="settings-user-management" class="settings-page settings-module-page hidden" data-settings-page="user-management">
+          <div class="settings-page-head"><div class="settings-breadcrumb"><span>Settings</span><span>›</span><span>User Management</span></div><div class="settings-page-title-row"><div class="settings-page-title">User Management</div><button class="settings-back-inline" type="button" data-settings-back>← Back</button></div></div>
+          <div class="settings-group">
+            <div class="settings-group-title"><div class="stitle-bar" style="background:var(--warning);"></div>👥 USER TRACKING</div>
+            <div class="user-tracking-grid">
+              <div class="user-track-stat"><small>Total Users</small><b id="track-total-users">0</b></div>
+              <div class="user-track-stat"><small>Active Now</small><b id="track-active-users">0</b></div>
+            </div>
+            <div class="user-track-actions">
+              <button class="btn-action btn-cyan" type="button" id="toggle-user-list-btn">👥 User List</button>
+              <button class="btn-action btn-blue" type="button" id="refresh-user-tracking-btn">↻ Refresh</button>
+            </div>
+            <input type="search" id="user-tracking-search" class="form-input user-tracking-search hidden" placeholder="Search by name, username or user ID">
+            <div id="user-tracking-list" class="tracked-user-list hidden"></div>
+          </div>
+        </div>
+
+        <div id="settings-coin-management" class="settings-page settings-module-page hidden" data-settings-page="coin-management">
+          <div class="settings-page-head"><div class="settings-breadcrumb"><span>Settings</span><span>›</span><span>Coin Management</span></div><div class="settings-page-title-row"><div class="settings-page-title">Coin Management</div><button class="settings-back-inline" type="button" data-settings-back>← Back</button></div></div>
+          <div class="settings-group">
+            <div class="settings-group-title"><div class="stitle-bar" style="background:var(--sky-dark);"></div>🪙 COIN MANAGEMENT</div>
+            <div class="add-form">
+               <input type="text" id="c-name" class="form-input" placeholder="Coin Name (e.g. BKASH)">
+               <div class="proof-upload" style="margin-bottom:12px;">
+                 <input type="file" id="c-logo-file" accept="image/*" class="hidden">
+                 <div class="proof-head"><span>📸 Coin Logo</span><small>Gallery</small></div>
+                 <button class="proof-select-btn" type="button" onclick="document.getElementById('c-logo-file').click()">+ Select Logo</button>
+                 <div class="proof-preview hidden" id="c-logo-preview">
+                   <img id="c-logo-preview-img" alt="Coin Logo">
+                   <div class="proof-preview-meta"><b id="c-logo-file-name">Selected</b></div>
+                   <button class="proof-remove-btn" type="button" id="c-logo-remove-btn">Remove</button>
+                 </div>
+               </div>
+               <input type="text" id="c-tid" class="form-input" placeholder="Transfer Target ID">
+               <select id="c-input-type" class="form-input"><option value="username">Sender Username</option><option value="code">Transfer Code</option></select>
+               <input type="number" id="c-min-submit" class="form-input" placeholder="Min Submit Limit (e.g. 20000)">
+               <div style="font-size:10px;font-weight:900;color:var(--sky-dark);margin:6px 0 10px;padding:7px 10px;background:var(--sky-light);border-radius:9px;letter-spacing:.8px;">📊 PRICING TIERS (3 TI SET KORO)</div>
+               <div class="tier-section"><div class="tier-label">🔵 TIER 1 — Lowest Range</div><div class="form-row2" style="margin-bottom:7px;"><input type="number" id="c-t1-from" class="form-input" placeholder="From (e.g. 20000)" style="margin:0;"><input type="number" id="c-t1-to" class="form-input" placeholder="To (e.g. 499000)" style="margin:0;"></div><input type="number" id="c-t1-rate" class="form-input" placeholder="Rate per 1,000 Coins (e.g. 2.70)" step="0.01"></div>
+               <div class="tier-section"><div class="tier-label">🟡 TIER 2 — Mid Range</div><div class="form-row2" style="margin-bottom:7px;"><input type="number" id="c-t2-from" class="form-input" placeholder="From (e.g. 500000)" style="margin:0;"><input type="number" id="c-t2-to" class="form-input" placeholder="To (e.g. 999000)" style="margin:0;"></div><input type="number" id="c-t2-rate" class="form-input" placeholder="Rate per 1,000 Coins" step="0.01"></div>
+               <div class="tier-section"><div class="tier-label">🟢 TIER 3 — High Range</div><div class="form-row2" style="margin-bottom:7px;"><input type="number" id="c-t3-from" class="form-input" placeholder="From (e.g. 1000000)" style="margin:0;"><input type="number" id="c-t3-to" class="form-input" placeholder="To (e.g. 9999999)" style="margin:0;"></div><input type="number" id="c-t3-rate" class="form-input" placeholder="Rate per 1,000 Coins" step="0.01"></div>
+               <button class="btn-action btn-cyan" type="button" id="add-coin-btn" style="margin-top:4px;">+ Add New Coin</button>
+            </div>
+            <div id="coin-list"></div>
+          </div>
+        </div>
+
+        <div id="settings-vpn-management" class="settings-page settings-module-page hidden" data-settings-page="vpn-management">
+          <div class="settings-page-head"><div class="settings-breadcrumb"><span>Settings</span><span>›</span><span>VPN Management</span></div><div class="settings-page-title-row"><div class="settings-page-title">VPN Management</div><button class="settings-back-inline" type="button" data-settings-back>← Back</button></div></div>
+          <div class="settings-group">
+            <div class="settings-group-title"><div class="stitle-bar" style="background:var(--purple);"></div>🌐 VPN BRANDS & STOCK</div>
+            <div class="add-form">
+               <input type="text" id="v-name" class="form-input" placeholder="VPN Brand Name">
+               <div class="proof-upload" style="margin-bottom:12px;">
+                 <input type="file" id="v-logo-file" accept="image/*" class="hidden">
+                 <div class="proof-head"><span>📸 VPN Logo Image</span><small>Gallery</small></div>
+                 <button class="proof-select-btn" type="button" onclick="document.getElementById('v-logo-file').click()">+ Select Logo</button>
+                 <div class="proof-preview hidden" id="v-logo-preview">
+                   <img id="v-logo-preview-img" alt="VPN Logo">
+                   <div class="proof-preview-meta"><b id="v-logo-file-name">Selected</b></div>
+                   <button class="proof-remove-btn" type="button" id="v-logo-remove-btn">Remove</button>
+                 </div>
+               </div>
+               <button class="btn-action btn-cyan" type="button" id="add-vpn-btn">+ Add VPN Brand</button>
+            </div>
+            <div id="adm-vpn-list"></div>
+          </div>
+        </div>
+
+        <div id="settings-branding-links" class="settings-page settings-module-page hidden" data-settings-page="branding-links">
+          <div class="settings-page-head"><div class="settings-breadcrumb"><span>Settings</span><span>›</span><span>Branding & Links</span></div><div class="settings-page-title-row"><div class="settings-page-title">Branding & Links</div><button class="settings-back-inline" type="button" data-settings-back>← Back</button></div></div>
+          <div class="settings-group"><div class="settings-group-title"><div class="stitle-bar" style="background:var(--purple);"></div>🌐 BRANDING & LINKS</div><input type="text" id="site-name" class="form-input" placeholder="Site Name"><input type="text" id="link-channel" class="form-input" placeholder="Telegram Channel Link"><input type="text" id="link-help" class="form-input" placeholder="Help Line Link"><button class="btn-action btn-blue" type="button" id="save-branding-btn">💾 Save Branding & Links</button></div>
+        </div>
+
+        <div id="settings-disclaimer-notice" class="settings-page settings-module-page hidden" data-settings-page="disclaimer-notice">
+          <div class="settings-page-head"><div class="settings-breadcrumb"><span>Settings</span><span>›</span><span>Disclaimer Notice</span></div><div class="settings-page-title-row"><div class="settings-page-title">Disclaimer Notice</div><button class="settings-back-inline" type="button" data-settings-back>← Back</button></div></div>
+          <div class="settings-group"><div class="settings-group-title"><div class="stitle-bar" style="background:var(--warning);"></div>⚠️ DISCLAIMER NOTICE</div><textarea id="disclaimer-text" class="form-input admin-textarea" placeholder="Admin notice লিখুন... Bangla / English both supported."></textarea><div class="notice-box" style="margin-top:4px;"><div class="notice-title">Live Preview</div><div class="notice-text" id="disclaimer-preview">—</div></div><button class="btn-action btn-cyan" type="button" id="save-disclaimer-btn">💾 Save Disclaimer Notice</button></div>
+          <div class="settings-group">
+            <div class="settings-group-title"><div class="stitle-bar" style="background:var(--sky-dark);"></div>📢 NOTICE BOX</div>
+            <div class="notice-target-box">
+              <div class="proof-head"><span>🎯 Notice Target</span><small>Required</small></div>
+              <div class="notice-target-row">
+                <label class="notice-target-option"><input type="radio" name="broadcast-target" value="all" checked> Send to All</label>
+                <label class="notice-target-option"><input type="radio" name="broadcast-target" value="selected"> Selected Users</label>
+              </div>
+              <div id="broadcast-selected-users-box" class="hidden" style="margin-top:12px;">
+                <div class="proof-head" style="margin-bottom:8px;"><span>👥 Select Users</span></div>
+                <div id="broadcast-user-select-list" class="notice-user-select-list"></div>
+              </div>
+            </div>
+            <textarea id="broadcast-notice-text" class="form-input admin-textarea" placeholder="Notice text লিখুন..."></textarea>
+            <input type="url" id="broadcast-video-link" class="form-input" placeholder="Video link (optional)">
+            <div class="proof-upload" style="margin-bottom:12px;">
+              <input type="file" id="broadcast-image-file" accept="image/*" class="hidden">
+              <div class="proof-head"><span>📸 Screenshot / Image</span><small>Optional</small></div>
+              <button class="proof-select-btn" type="button" id="broadcast-image-select-btn">+ Attach Screenshot/Image</button>
+              <div class="proof-preview hidden" id="broadcast-image-preview">
+                <img id="broadcast-image-preview-img" alt="Notice Image Preview">
+                <div class="proof-preview-meta"><b id="broadcast-image-file-name">Image selected</b><small id="broadcast-image-file-size">Ready to send</small></div>
+                <button class="proof-remove-btn" type="button" id="broadcast-image-remove-btn">Remove</button>
+              </div>
+            </div>
+            <div class="notice-box" style="margin-top:4px;"><div class="notice-title">Notice Preview</div><div class="notice-text" id="broadcast-notice-preview">Notice preview...</div></div>
+            <button class="btn-action btn-cyan" type="button" id="send-broadcast-notice-btn" style="margin-top:12px;">📤 Send Notice</button>
+          </div>
+        </div>
+
+        <div id="settings-payment-methods" class="settings-page settings-module-page hidden" data-settings-page="payment-methods">
+          <div class="settings-page-head"><div class="settings-breadcrumb"><span>Settings</span><span>›</span><span>Coin Payment Methods</span></div><div class="settings-page-title-row"><div class="settings-page-title">Coin Payment Methods</div><button class="settings-back-inline" type="button" data-settings-back>← Back</button></div></div>
+          <div class="settings-group">
+             <div class="settings-group-title"><div class="stitle-bar" style="background:var(--emerald);"></div>💳 COIN PAYMENTS</div>
+             <div class="add-form" style="display:flex;flex-direction:column;gap:9px;margin-bottom:12px;">
+                <input type="text" id="new-pay" class="form-input" placeholder="Method Name (e.g. bKash)">
+                <input type="text" id="new-pay-num" class="form-input" placeholder="Payment Number">
+                <select id="new-pay-currency" class="form-input">
+                  <option value="BDT">💵 BDT — Taka (৳) Calculation</option>
+                  <option value="USD">💲 USD — Dollar ($) Calculation</option>
+                </select>
+                <div id="new-pay-dollar-rate-wrap" class="hidden">
+                  <div style="font-size:10px;font-weight:900;color:var(--gold);margin-bottom:6px;padding:7px 10px;background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.25);border-radius:9px;letter-spacing:.8px;">💱 DOLLAR RATE SET KORO: 1$ = কত ৳?</div>
+                  <input type="number" id="new-pay-dollar-rate" class="form-input" placeholder="e.g. 110 (মানে 1$ = 110৳)" step="0.01" min="1">
+                </div>
+                <div class="proof-upload" style="margin-bottom:0;">
+                   <input type="file" id="p-logo-file" accept="image/*" class="hidden">
+                   <div class="proof-head"><span>📸 Method Logo</span><small>Gallery</small></div>
+                   <button class="proof-select-btn" type="button" onclick="document.getElementById('p-logo-file').click()">+ Select Logo</button>
+                   <div class="proof-preview hidden" id="p-logo-preview">
+                     <img id="p-logo-preview-img" alt="Pay Logo">
+                     <div class="proof-preview-meta"><b id="p-logo-file-name">Selected</b></div>
+                     <button class="proof-remove-btn" type="button" id="p-logo-remove-btn">Remove</button>
+                   </div>
+                </div>
+                <button class="btn-action btn-emerald" type="button" id="add-payment-btn">Add Method</button>
+             </div>
+             <div id="payment-list"></div>
+          </div>
+        </div>
+
+        <div id="settings-vpn-payment-methods" class="settings-page settings-module-page hidden" data-settings-page="vpn-payment-methods">
+          <div class="settings-page-head"><div class="settings-breadcrumb"><span>Settings</span><span>›</span><span>VPN Payment Methods</span></div><div class="settings-page-title-row"><div class="settings-page-title">VPN Payment Methods</div><button class="settings-back-inline" type="button" data-settings-back>← Back</button></div></div>
+          <div class="settings-group">
+             <div class="settings-group-title"><div class="stitle-bar" style="background:var(--emerald);"></div>💳 VPN PAYMENTS</div>
+             <div class="add-form" style="display:flex;flex-direction:column;gap:9px;margin-bottom:12px;">
+                <input type="text" id="new-vpn-pay" class="form-input" placeholder="Method Name (e.g. bKash)">
+                <input type="text" id="new-vpn-pay-num" class="form-input" placeholder="Payment Number">
+                <div class="proof-upload" style="margin-bottom:0;">
+                   <input type="file" id="vpn-p-logo-file" accept="image/*" class="hidden">
+                   <div class="proof-head"><span>📸 Method Logo</span><small>Gallery</small></div>
+                   <button class="proof-select-btn" type="button" onclick="document.getElementById('vpn-p-logo-file').click()">+ Select Logo</button>
+                   <div class="proof-preview hidden" id="vpn-p-logo-preview">
+                     <img id="vpn-p-logo-preview-img" alt="Pay Logo">
+                     <div class="proof-preview-meta"><b id="vpn-p-logo-file-name">Selected</b></div>
+                     <button class="proof-remove-btn" type="button" id="vpn-p-logo-remove-btn">Remove</button>
+                   </div>
+                </div>
+                <button class="btn-action btn-emerald" type="button" id="add-vpn-payment-btn">Add Method</button>
+             </div>
+             <div id="vpn-payment-list"></div>
+          </div>
+        </div>
+
+        <div id="settings-tutorial-management" class="settings-page settings-module-page hidden" data-settings-page="tutorial-management">
+          <div class="settings-page-head"><div class="settings-breadcrumb"><span>Settings</span><span>›</span><span>Tutorial Management</span></div><div class="settings-page-title-row"><div class="settings-page-title">Tutorial Management</div><button class="settings-back-inline" type="button" data-settings-back>← Back</button></div></div>
+          <div class="settings-group"><div class="settings-group-title"><div class="stitle-bar" style="background:var(--sky-dark);"></div>🎬 TUTORIAL MANAGEMENT</div><div class="add-form"><input type="url" id="tutorial-url" class="form-input" placeholder="YouTube Video Link (watch, youtu.be, embed)"><input type="text" id="tutorial-title" class="form-input" placeholder="Video Title (Optional)"><button class="btn-action btn-cyan" type="button" id="add-tutorial-btn">+ Add Tutorial Video</button></div><div id="tutorial-admin-list"></div></div>
+        </div>
+      </div>
+    </div>
+  </div> 
+
+  <!-- COIN DETAIL FULL-SCREEN MODAL -->
+  <div id="coin-detail-modal" class="coin-detail-mask">
+    <div class="coin-detail-page">
+      <div class="cd-back-row">
+        <button class="cd-back-btn" type="button" id="close-coin-detail-btn">←</button>
+        <span class="cd-back-label">Back to all coins</span>
+      </div>
+      <div class="cd-logo-wrap" id="cd-logo-wrap">
+        <span style="font-size:34px;">💰</span>
+      </div>
+      <div class="cd-coin-name" id="cd-coin-name">—</div>
+      <div class="cd-tiers-head">
+        <span class="cd-tiers-icon">📊</span>
+        <span class="cd-tiers-title">Pricing Tiers</span>
+      </div>
+      <div class="pricing-table">
+        <div class="pricing-head">
+          <span>AMOUNT RANGE</span>
+          <span>PRICE PER 1,000 COINS</span>
+        </div>
+        <div id="cd-tiers-body"></div>
+      </div>
+      <button class="cd-submit-btn" type="button" id="cd-submit-btn">
+        <span>📤</span> Submit to Admin <span>→</span>
+      </button>
+      <div class="cd-tip-box">
+        <span class="cd-tip-icon">💡</span>
+        <div class="cd-tip-text"><b>Tip:</b> Send your coins first, then submit the form with your proof screenshot for faster approval.</div>
+      </div>
+    </div>
+  </div>
+
+  <div id="coin-edit-modal" class="modal-mask z-[5000]">
+     <div class="bottom-sheet">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;"><div class="sheet-title">Edit Coin</div><button class="x-btn" type="button" onclick="document.getElementById('coin-edit-modal').classList.remove('active')">✕</button></div>
+        <div class="add-form">
+           <input type="text" id="edit-c-name" class="form-input" disabled style="opacity:0.7">
+           <div class="proof-upload" style="margin-bottom:12px;">
+             <input type="file" id="edit-c-logo-file" accept="image/*" class="hidden">
+             <div class="proof-head"><span>📸 Coin Logo</span><small>Gallery</small></div>
+             <button class="proof-select-btn" type="button" onclick="document.getElementById('edit-c-logo-file').click()">+ Change Logo</button>
+             <div class="proof-preview hidden" id="edit-c-logo-preview">
+               <img id="edit-c-logo-preview-img" alt="Coin Logo">
+               <div class="proof-preview-meta"><b>Selected</b></div>
+               <button class="proof-remove-btn" type="button" id="edit-c-logo-remove-btn">Remove</button>
+             </div>
+           </div>
+           <input type="text" id="edit-c-tid" class="form-input" placeholder="Transfer Target ID">
+           <select id="edit-c-input-type" class="form-input"><option value="username">Sender Username</option><option value="code">Transfer Code</option></select>
+           <input type="number" id="edit-c-min-submit" class="form-input" placeholder="Min Submit Limit">
+           <div style="font-size:10px;font-weight:900;color:var(--sky-dark);margin:6px 0 10px;padding:7px 10px;background:var(--sky-light);border-radius:9px;letter-spacing:.8px;">📊 PRICING TIERS EDIT KORO</div>
+           <div class="tier-section"><div class="tier-label">🔵 TIER 1</div><div class="form-row2" style="margin-bottom:7px;"><input type="number" id="edit-c-t1-from" class="form-input" placeholder="From" style="margin:0;"><input type="number" id="edit-c-t1-to" class="form-input" placeholder="To" style="margin:0;"></div><input type="number" id="edit-c-t1-rate" class="form-input" placeholder="Rate per 1,000 Coins" step="0.01"></div>
+           <div class="tier-section"><div class="tier-label">🟡 TIER 2</div><div class="form-row2" style="margin-bottom:7px;"><input type="number" id="edit-c-t2-from" class="form-input" placeholder="From" style="margin:0;"><input type="number" id="edit-c-t2-to" class="form-input" placeholder="To" style="margin:0;"></div><input type="number" id="edit-c-t2-rate" class="form-input" placeholder="Rate per 1,000 Coins" step="0.01"></div>
+           <div class="tier-section"><div class="tier-label">🟢 TIER 3</div><div class="form-row2" style="margin-bottom:7px;"><input type="number" id="edit-c-t3-from" class="form-input" placeholder="From" style="margin:0;"><input type="number" id="edit-c-t3-to" class="form-input" placeholder="To" style="margin:0;"></div><input type="number" id="edit-c-t3-rate" class="form-input" placeholder="Rate per 1,000 Coins" step="0.01"></div>
+           <button class="btn-action btn-cyan" type="button" id="save-coin-edit-btn" style="margin-top:4px;">💾 Save Changes</button>
+        </div>
+     </div>
+  </div>
+
+  <div id="admin-stock-modal" class="modal-mask z-[4000]">
+     <div class="bottom-sheet">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;"><div class="sheet-title">Deliver Account</div><button class="x-btn" type="button" onclick="document.getElementById('admin-stock-modal').classList.remove('active')">✕</button></div>
+        <div class="notice-box" style="margin-bottom:12px;"><div class="notice-text">Select an account below to deliver to the user.</div></div>
+        <div id="admin-stock-select-list" class="space-y-2"></div>
+     </div>
+  </div>
+
+  <div id="admin-confirm" class="confirm-mask z-[5000]">
+    <div class="confirm-box"><div class="confirm-icon" id="admin-confirm-icon">⚠️</div><div class="confirm-title" id="admin-confirm-title">Confirm Action</div><p id="admin-confirm-desc" style="font-size:13px;color:var(--subtext);text-align:center;margin-bottom:20px;line-height:1.5;"></p><div class="confirm-btns"><button class="btn-back" type="button" id="admin-confirm-cancel">Cancel</button><button class="btn-go" type="button" id="admin-confirm-ok">Confirm</button></div></div>
+  </div>
+
+  <div id="payment-modal" class="confirm-mask z-[4000]">
+    <div class="confirm-box"><div class="confirm-icon">💸</div><div class="confirm-title">Mark Payment as Paid</div><p id="payment-modal-desc" style="font-size:13px;color:var(--subtext);text-align:center;margin-bottom:12px;line-height:1.5;"></p><input type="text" id="payment-ref-input" class="form-input" placeholder="Payment transaction / reference ID"><div class="confirm-btns"><button class="btn-back" type="button" id="payment-cancel-btn">Cancel</button><button class="btn-go" type="button" id="payment-paid-btn">✓ Mark Paid</button></div></div>
+  </div>
+  <input type="file" id="payment-proof-file" accept="image/*" class="hidden">
+
+  <div id="proof-modal" class="confirm-mask z-[5000]">
+    <div class="proof-viewer-box">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px;">
+        <div><div class="confirm-title" style="text-align:left;margin-bottom:2px;">Proof Screenshot</div><p id="proof-modal-caption" style="font-size:11px;color:var(--subtext);font-weight:700;"></p></div>
+        <button class="x-btn" type="button" id="proof-close-btn">✕</button>
+      </div>
+      <img id="proof-modal-img" class="proof-viewer-img" alt="Order Proof Screenshot">
+      <button class="btn-primary" type="button" id="proof-open-btn" style="margin-top:12px;padding:13px;">Open Full Image</button>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    const APP_DEFAULT_NAME = "SHISHIR COIN SHOP";
+    const LEGACY_BRAND_REGEX = /META\s*BUYER\s*ZONE/gi;
+    function normalizeBrandName(value){
+      const raw = String(value || '').trim();
+      if(!raw) return APP_DEFAULT_NAME;
+      return raw.replace(LEGACY_BRAND_REGEX, APP_DEFAULT_NAME).trim() || APP_DEFAULT_NAME;
+    }
+    function sanitizeLegacyBrandInDom(root=document.body){
+      if(!root) return;
+      try{
+        const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+        let node;
+        while(node = walker.nextNode()){
+          if(LEGACY_BRAND_REGEX.test(node.nodeValue)){
+            node.nodeValue = node.nodeValue.replace(LEGACY_BRAND_REGEX, APP_DEFAULT_NAME);
+          }
+          LEGACY_BRAND_REGEX.lastIndex = 0;
+        }
+        document.querySelectorAll('input,textarea').forEach(el => {
+          if(typeof el.value === 'string' && LEGACY_BRAND_REGEX.test(el.value)){
+            el.value = el.value.replace(LEGACY_BRAND_REGEX, APP_DEFAULT_NAME);
+          }
+          LEGACY_BRAND_REGEX.lastIndex = 0;
+        });
+      }catch(e){ console.warn('Brand sanitizer skipped:', e); }
+    }
+    function startLegacyBrandObserver(){
+      sanitizeLegacyBrandInDom();
+      try{
+        const obs = new MutationObserver(() => sanitizeLegacyBrandInDom());
+        obs.observe(document.body, { childList:true, subtree:true, characterData:true });
+      }catch(e){}
+    }
+    
+    const DEFAULT_LOADER_LOGO = "https://i.ibb.co/nq2sfGBf/photo-2026-06-26-00-19-07.jpg";
+    const DEFAULT_PROFILE_IMAGE = "https://i.ibb.co/nq2sfGBf/photo-2026-06-26-00-19-07.jpg";
+    const DEFAULT_MIN_SUBMIT_LIMIT = 5000;
+    const SEND_FEE = 5;
+    const DEFAULT_DISCLAIMER_NOTICE = `Please check your order details carefully before submitting.`;
+
+    const ADMIN_IDS = [7668407169, 8505710811];
+    const TELEGRAM_BOT_TOKEN = "8875964438:AAF2lT2euFccjbRUbMeQWkFLZDCjUmfuQSI";
+    const TELEGRAM_ADMIN_CHAT_ID = "7668407169";
+    const TELEGRAM_NOTIFY_ENABLED = true;
+    const NOTIFICATION_BACKEND_MODE = false;
+    const MAX_PROOF_DATA_URL_LENGTH = 950000; 
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCZqrp0hx-tkAJjUqyZ7Beas50HE5lzq6c",
+      authDomain: "shishir-coin-shop-94362.firebaseapp.com",
+      databaseURL: "https://shishir-coin-shop-94362-default-rtdb.firebaseio.com",
+      projectId: "shishir-coin-shop-94362",
+      storageBucket: "shishir-coin-shop-94362.firebasestorage.app",
+      messagingSenderId: "276177127608",
+      appId: "1:276177127608:web:7f1da17625285465d1cc4d"
+    };
+
+    const $ = (id) => document.getElementById(id);
+    const tg = window.Telegram?.WebApp || { initDataUnsafe:{}, ready(){}, expand(){}, openLink(url){window.open(url,'_blank','noopener,noreferrer')}, openTelegramLink(url){window.open(url,'_blank','noopener,noreferrer')}, HapticFeedback:{impactOccurred(){},notificationOccurred(){}} };
+    try { tg.ready(); tg.expand(); } catch(e) {}
+
+    const tgUser = tg.initDataUnsafe?.user || { id:0, first_name:'Guest', username:'guest_user', photo_url:'' };
+    const currentUserId = Number(tgUser.id || 0);
+    const isAdmin = ADMIN_IDS.includes(currentUserId);
+    const userDisplayName = String(tgUser.first_name || tgUser.username || 'Guest').trim();
+    const userUsername = String(tgUser.username || 'no_username').trim();
+    const userRefKey = currentUserId ? `tg_${currentUserId}` : safeDbKey(userUsername || userDisplayName || 'guest');
+
+    let db = null, firebaseReady = false, appLoaded = false;
+    let selC = '', selR = 0, currentTID = '', finalP = 0;
+    let selPricingTiers = [], selMinSubmitLimit = DEFAULT_MIN_SUBMIT_LIMIT, selInputType = 'username';
+    let channelLinkValue = '', helpLinkValue = '', disclaimerNoticeValue = DEFAULT_DISCLAIMER_NOTICE, submitting = false;
+    let proofFileName = '', proofImageDataUrl = '', proofProcessing = false;
+    let currentSellPayMethod = '', currentSellPayNumber = '';
+    let sessionPayNumbers = {}; // Temporary numbers entered by user in this session (not saved to localStorage)
+    
+    // Config Caches
+    let marketCache = {}, vpnConfigCache = {}, paymentMethodsCache = {}, vpnPaymentMethodsCache = {}, tutorialCache = {}, userRegistryCache = {}, globalOrders = {};
+    let currentAdminTab = 'pending', adminStarted = false, adminConfirmCallback = null;
+    let paymentTargetOrderId = '', proofModalSrc = '', paymentProofTargetOrderId = '', paymentProofProcessing = false;
+    let broadcastNoticeImageDataUrl = '', broadcastNoticeImageFileName = '', broadcastNoticeImageProcessing = false, leaderboardUserListOpen = false, userTrackingSearchTerm = '';
+    const ACTIVE_USER_WINDOW_MS = 10 * 60 * 1000;
+
+    // Logo Caches
+    let cLogoDataUrl = '', editCLogoDataUrl = '', vpnLogoDataUrl = '', payLogoDataUrl = '', vpnPayLogoDataUrl = '';
+    let editCoinTargetKey = '';
+
+    // VPN States
+    let selVpnBrand = '', selVpnPlanName = '', selVpnPlanPrice = 0, selVpnPayMethod = '', selVpnPayNumberTarget = '';
+    let vpnProofFileName = '', vpnProofImageDataUrl = '', vpnProofProcessing = false;
+    let deliveryTargetOrderId = '', deliveryTargetVpnBrand = '';
+
+    window.addEventListener('error', (event) => { setTimeout(finishLoading, 0); });
+    window.addEventListener('unhandledrejection', (event) => { setTimeout(finishLoading, 0); });
+
+    function escapeHtml(value){ return String(value ?? '').replace(/[&<>'"]/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[ch])); }
+    function safeDbKey(value){ return String(value || '').trim().replace(/[.#$\[\]\/]/g,'_').slice(0,80) || 'item'; }
+    function money(n){ return `${Number(n || 0).toFixed(2)}৳`; }
+    function formatDate(ts){
+      if(!ts) return '';
+      try { return new Date(ts).toLocaleString('en-BD',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit',hour12:true}); } catch(e){ return ''; }
+    }
+
+    function getOrderStatus(order){
+      const legacy = String(order?.status || '').toLowerCase();
+      const current = String(order?.order_status || '').toLowerCase();
+      if(['pending','approved','rejected'].includes(current)) return current;
+      if(legacy === 'completed') return 'approved';
+      if(legacy === 'rejected') return 'rejected';
+      return 'pending';
+    }
+    function getPaymentStatus(order){
+      const current = String(order?.payment_status || '').toLowerCase();
+      if(current === 'paid') return 'paid';
+      return 'pending';
+    }
+    function getCreatedAt(order){ return Number(order?.created_at || order?.timestamp || 0); }
+    function getUserStatusInfo(order){
+      const os = getOrderStatus(order), ps = getPaymentStatus(order);
+      if(os === 'rejected') return { label:'Rejected', cls:'rejected' };
+      if(ps === 'paid') return { label:'Payment Done', cls:'paid' };
+      if(os === 'approved') return { label:'Accepted', cls:'accepted' };
+      return { label:'Pending', cls:'pending' };
+    }
+    function getOrderBadgeInfo(order){
+      const os = getOrderStatus(order);
+      if(os === 'approved') return { label:'APPROVED', cls:'approved' };
+      if(os === 'rejected') return { label:'REJECTED', cls:'rejected' };
+      return { label:'PENDING', cls:'pending' };
+    }
+    function getPaymentBadgeInfo(order){
+      return getPaymentStatus(order) === 'paid' ? { label:'PAID', cls:'paid' } : { label:'PAYMENT PENDING', cls:'payment-pending' };
+    }
+    function normalizeOrderForSearch(order){
+      return [order?.username, order?.user, order?.coin, order?.vpn_brand, order?.targetId, order?.target_id, order?.sender, order?.id, order?.number].map(v => String(v || '').toLowerCase()).join(' ');
+    }
+    function normalizeLink(url){
+      const v = String(url || '').trim();
+      if(!v) return '';
+      if(/^https?:\/\//i.test(v) || /^tg:\/\//i.test(v)) return v;
+      if(/^(t\.me|telegram\.me)\//i.test(v)) return 'https://' + v;
+      if(/^@/.test(v)) return 'https://t.me/' + v.slice(1);
+      return 'https://' + v;
+    }
+    function normalizeDisclaimerNotice(value){
+      const raw = String(value ?? '').replace(/\r\n/g, '\n').replace(/\r/g, '\n').trim();
+      return raw || DEFAULT_DISCLAIMER_NOTICE;
+    }
+    function renderDisclaimerNotice(){
+      const text = normalizeDisclaimerNotice(disclaimerNoticeValue);
+      ['confirm-disclaimer-text','disclaimer-preview'].forEach(id => {
+        const el = $(id); if(el) el.textContent = text;
+      });
+      const input = $('disclaimer-text');
+      if(input && document.activeElement !== input) input.value = text;
+    }
+
+    function compressImageFile(file){
+      return new Promise((resolve,reject) => {
+        const reader = new FileReader();
+        reader.onerror = () => reject(new Error('file-read-failed'));
+        reader.onload = () => {
+          const img = new Image();
+          img.onerror = () => reject(new Error('image-load-failed'));
+          img.onload = () => {
+            const maxSide = 900;
+            let w = img.width, h = img.height;
+            const ratio = Math.min(1, maxSide / Math.max(w, h));
+            w = Math.max(1, Math.round(w * ratio));
+            h = Math.max(1, Math.round(h * ratio));
+            const canvas = document.createElement('canvas');
+            canvas.width = w; canvas.height = h;
+            const ctx = canvas.getContext('2d');
+            if(!ctx) return reject(new Error('canvas-context-failed'));
+            ctx.drawImage(img, 0, 0, w, h);
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.62);
+            if(dataUrl.length > MAX_PROOF_DATA_URL_LENGTH) return reject(new Error('proof-too-large-after-compression'));
+            resolve(dataUrl);
+          };
+          img.src = String(reader.result || '');
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+
+    function renderBroadcastNoticePreview(){
+      const textEl = $('broadcast-notice-text'), videoEl = $('broadcast-video-link'), preview = $('broadcast-notice-preview');
+      if(!preview) return;
+      const noticeText = String(textEl ? textEl.value : '').trim();
+      const videoLink = normalizeLink(videoEl ? videoEl.value : '');
+      const imageNote = broadcastNoticeImageDataUrl ? `\n\n📸 Screenshot Attached` : '';
+      preview.textContent = noticeText ? `📢 SHISHIR COIN SHOP Notice\n\n${noticeText}${videoLink ? `\n\n🎬 Video Link:\n${videoLink}` : ''}${imageNote}` : 'Notice text preview here.';
+    }
+    function resetBroadcastNoticeImage(){
+      broadcastNoticeImageDataUrl = ''; broadcastNoticeImageFileName = ''; broadcastNoticeImageProcessing = false;
+      if($('broadcast-image-file')) $('broadcast-image-file').value = '';
+      if($('broadcast-image-preview')) $('broadcast-image-preview').classList.add('hidden');
+      if($('broadcast-image-preview-img')) $('broadcast-image-preview-img').removeAttribute('src');
+      renderBroadcastNoticePreview();
+    }
+    function collectKnownUsers(){
+      const map = new Map();
+      const addUser = (key, data={}) => {
+        const userKey = safeDbKey(key || data.userKey || data.telegram_chat_id || data.user || 'user');
+        const previous = map.get(userKey) || {};
+        const merged = {...previous, ...data, userKey};
+        merged.chatId = String(merged.telegram_chat_id || merged.user_id || '').trim();
+        merged.label = String(merged.username ? '@'+merged.username : (merged.display_name || merged.user || userKey));
+        merged.banned = merged.banned === true;
+        merged.notificationEnabled = merged.notification_off !== true;
+        merged.active = merged.is_online === true || (!!merged.last_active && (Date.now() - merged.last_active) <= ACTIVE_USER_WINDOW_MS);
+        map.set(userKey, merged);
+      };
+      Object.entries(userRegistryCache || {}).forEach(([key,u]) => addUser(key, u || {}));
+      Object.values(globalOrders || {}).forEach(order => addUser(order.userKey || order.telegram_chat_id, order));
+      return Array.from(map.values()).sort((a,b) => (b.active?1:0) - (a.active?1:0));
+    }
+    function guardBannedUser(){
+      if((userRegistryCache[userRefKey] || {}).banned){ showToast('Your account is restricted. Contact Support.','error'); return true; }
+      return false;
+    }
+    function toggleLeaderboardUserList(){ leaderboardUserListOpen = !leaderboardUserListOpen; renderUserTrackingSystem(); }
+    
+    function renderUserTrackingSystem(){
+      const allUsers = collectKnownUsers();
+      if($('track-total-users')) $('track-total-users').textContent = allUsers.length;
+      if($('track-active-users')) $('track-active-users').textContent = allUsers.filter(u => u.active).length;
+      const listEl = $('user-tracking-list');
+      if(!listEl) return;
+      listEl.classList.toggle('hidden', !leaderboardUserListOpen);
+      if(!leaderboardUserListOpen) return;
+      const q = String(userTrackingSearchTerm || '').trim().toLowerCase();
+      const users = q ? allUsers.filter(u => `${u.label} ${u.chatId} ${u.userKey}`.toLowerCase().includes(q)) : allUsers;
+      listEl.innerHTML = users.map(u => {
+        const statusPill = u.banned ? '<span class="mini-pill bad">Banned</span>' : (u.active ? '<span class="mini-pill good">Active</span>' : '<span class="mini-pill">Inactive</span>');
+        return `<div class="tracked-user-card"><div><div class="tracked-user-name">${escapeHtml(u.label)}</div><div class="tracked-user-meta">ID: ${escapeHtml(u.chatId)}</div><div class="tracked-user-status">${statusPill}</div></div><div class="tracked-user-controls"><button class="btn-small ${u.banned?'green':'red'}" type="button" onclick="updateTrackedUserBan('${u.userKey}', ${!u.banned})">${u.banned?'Unban':'Ban'}</button></div></div>`;
+      }).join('') || `<div class="empty-state">No users found</div>`;
+    }
+    
+    function updateTrackedUserBan(key, shouldBan){
+      if(!requireFirebase()) return;
+      adminConfirm(shouldBan?'Ban this user?':'Unban this user?', 'Are you sure?', shouldBan?'🚫':'✅', async () => {
+        db.ref('users/' + key).update({banned:!!shouldBan, status:shouldBan?'banned':'active'}).then(() => showToast('User updated','success'));
+      });
+    }
+    
+    function showToast(msg, type='info'){
+      const t = $('toast'); t.textContent = msg;
+      t.className = 'toast' + ($('admin-panel').classList.contains('hidden') ? '' : ' admin');
+      t.style.background = type === 'success' ? '#065f46' : type === 'error' ? '#991b1b' : type === 'warning' ? '#92400e' : '#3f3f46';
+      t.style.color = '#fff'; t.classList.add('show');
+      setTimeout(() => t.classList.remove('show'), 2600);
+    }
+    
+    function tgEscape(value){ return String(value ?? '').replace(/[&<>]/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[ch])); }
+    function telegramApiUrl(method){ return `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/${method}`; }
+    
+    // Telegram Message Builders and Sender Utilities
+    function telegramPostByHiddenForm(payload){
+      const iframeName = 'tg_notify_' + Date.now();
+      const iframe = document.createElement('iframe'); iframe.name = iframeName; iframe.style.display = 'none'; document.body.appendChild(iframe);
+      const form = document.createElement('form'); form.method = 'POST'; form.action = telegramApiUrl('sendMessage'); form.target = iframeName; form.style.display = 'none';
+      Object.entries(payload).forEach(([name,value]) => { const input = document.createElement('input'); input.type = 'hidden'; input.name = name; input.value = String(value ?? ''); form.appendChild(input); });
+      document.body.appendChild(form); form.submit();
+      setTimeout(() => { try{ form.remove(); iframe.remove(); }catch(e){} }, 8000);
+      return true;
+    }
+    async function sendTelegramMessage(chatId, text){
+      const target = String(chatId || '').trim(), message = String(text || '').trim();
+      if(!TELEGRAM_NOTIFY_ENABLED || !target || !message) return false;
+      const payload = { chat_id: target, text: message, parse_mode: 'HTML', disable_web_page_preview: 'true' };
+      try{ return telegramPostByHiddenForm(payload); }catch(e){ return false; }
+    }
+    function dataUrlToBlob(dataUrl){
+      const parts = String(dataUrl || '').split(',');
+      if(parts.length < 2) throw new Error('Invalid image data');
+      const mime = parts[0].match(/data:([^;]+);base64/i)[1], binary = atob(parts[1]);
+      const bytes = new Uint8Array(binary.length);
+      for(let i=0;i<binary.length;i++) bytes[i] = binary.charCodeAt(i);
+      return new Blob([bytes], {type:mime});
+    }
+    async function sendTelegramPhoto(chatId, imageDataUrl, caption=''){
+      if(!TELEGRAM_NOTIFY_ENABLED || !chatId || !imageDataUrl) return false;
+      try{
+        const formData = new FormData(); formData.append('chat_id', chatId); formData.append('photo', dataUrlToBlob(imageDataUrl), 'proof.jpg');
+        if(caption){ formData.append('caption', caption); formData.append('parse_mode', 'HTML'); }
+        await fetch(telegramApiUrl('sendPhoto'), { method:'POST', mode:'no-cors', body:formData });
+        return true;
+      }catch(err){ return false; }
+    }
+    
+    function orderShortId(order){ return String(order?.id || '').slice(-7) || '—'; }
+    function orderUserLabel(order){ return order?.username && order.username !== 'no_username' ? '@' + order.username : (order?.user || 'Guest'); }
+    function getOrderPaymentNumber(order){ return order?.number || '—'; }
+    function getOrderUserChatId(order){
+      const candidates = [order?.telegram_chat_id, order?.userId, order?.user_id];
+      for(const value of candidates){
+        const chatId = String(value ?? '').trim();
+        if(chatId && chatId !== '0' && /^-?\d+$/.test(chatId)) return chatId;
+      }
+      return '';
+    }
+    async function sendUserTelegramMessage(order, message){
+      const chatId = getOrderUserChatId(order);
+      if(!chatId) return false;
+      return sendTelegramMessage(chatId, message);
+    }
+    function getPaymentProofSrc(order){ return String(order?.payment_proof_image_url || '').trim(); }
+    async function sendUserPaymentProofPhoto(order){
+      const chatId = getOrderUserChatId(order);
+      const src = getPaymentProofSrc(order);
+      if(!chatId || !src) return false;
+      return sendTelegramPhoto(chatId, src, '📸 <b>পেমেন্ট প্রুফ স্ক্রিনশট</b>');
+    }
+
+    function buildNewOrderMessage(order){
+      if(order.order_type === 'vpn'){
+        return `🆕 <b>NEW VPN ORDER</b>\n\n👤 <b>User:</b> ${tgEscape(orderUserLabel(order))}\n🆔 <b>User ID:</b> ${tgEscape(order.userId || order.user_id || '—')}\n🌐 <b>VPN:</b> ${tgEscape(order.vpn_brand || '—')}\n📦 <b>Plan:</b> ${tgEscape(order.vpn_plan || '—')}\n💰 <b>Payout:</b> ${Number(order.payable || 0).toFixed(2)}৳\n💳 <b>Method:</b> ${tgEscape(order.method || '—')}\n📱 <b>Payment:</b> ${tgEscape(getOrderPaymentNumber(order))}\n📸 <b>Proof:</b> ${order.proof_uploaded ? 'Uploaded' : 'Not uploaded'}\n\n🆔 <b>Order ID:</b> #${tgEscape(orderShortId(order))}\n⏳ <b>Status:</b> Pending`;
+      }
+      return `🆕 <b>NEW COIN ORDER</b>\n\n👤 <b>User:</b> ${tgEscape(orderUserLabel(order))}\n🆔 <b>User ID:</b> ${tgEscape(order.userId || order.user_id || '—')}\n🪙 <b>Coin:</b> ${tgEscape(order.coin || '—')}\n📦 <b>Amount:</b> ${Number(order.amt || 0).toLocaleString()}\n💰 <b>Payout:</b> ${Number(order.payable || 0).toFixed(2)}৳\n💳 <b>Method:</b> ${tgEscape(order.method || '—')}\n📱 <b>Payment:</b> ${tgEscape(getOrderPaymentNumber(order))}\n📨 <b>Sender:</b> ${tgEscape(order.sender || '—')}\n🎯 <b>Target ID:</b> ${tgEscape(order.targetId || order.target_id || '—')}\n📸 <b>Proof:</b> ${order.proof_uploaded ? 'Uploaded' : 'Not uploaded'}\n\n🆔 <b>Order ID:</b> #${tgEscape(orderShortId(order))}\n⏳ <b>Status:</b> Pending`;
+    }
+    
+    function buildUserOrderSubmittedMessage(order){
+      let details = order.order_type === 'vpn' ? `🌐 <b>VPN:</b> ${tgEscape(order.vpn_brand || '—')}\n📦 <b>Plan:</b> ${tgEscape(order.vpn_plan || '—')}` : `🪙 <b>কয়েন:</b> ${tgEscape(order.coin || '—')}\n📦 <b>পরিমাণ:</b> ${Number(order.amt || 0).toLocaleString()}`;
+      return `📩 <b>অর্ডার গ্রহণ করা হয়েছে</b>\n\nআপনার অর্ডারটি সফলভাবে গ্রহণ করা হয়েছে। আমাদের টিম অর্ডারটি যাচাই করছে।\n\n🆔 <b>অর্ডার আইডি:</b> #${tgEscape(orderShortId(order))}\n${details}\n💰 <b>পেমেন্ট:</b> ${Number(order.payable || 0).toFixed(2)}৳\n💳 <b>মাধ্যম:</b> ${tgEscape(order.method || '—')}\n📱 <b>পেমেন্ট নম্বর:</b> ${tgEscape(getOrderPaymentNumber(order))}\n\n<b>আমাদের সাথে নিরাপদ লেনদেনের জন্য ধন্যবাদ।</b>`;
+    }
+    
+    function buildOrderStatusMessage(order, orderStatus){
+      const status = String(orderStatus || '').toLowerCase();
+      let details = order.order_type === 'vpn' ? `🌐 <b>VPN:</b> ${tgEscape(order.vpn_brand || '—')}` : `🪙 <b>কয়েন:</b> ${tgEscape(order.coin || '—')}\n📦 <b>পরিমাণ:</b> ${Number(order.amt || 0).toLocaleString()}`;
+
+      if(status === 'approved' || status === 'completed'){
+        let extra = order.order_type === 'vpn' ? `\n🔐 <b>Credentials:</b> Check App History` : `\n💰 <b>পেমেন্ট:</b> ${Number(order.payable || 0).toFixed(2)}৳\n💳 <b>মাধ্যম:</b> ${tgEscape(order.method || '—')}\n📱 <b>পেমেন্ট নম্বর:</b> ${tgEscape(getOrderPaymentNumber(order))}`;
+        return `✅ <b>অর্ডার অনুমোদিত হয়েছে</b>\n\nআপনার অর্ডারটি যাচাই করে অনুমোদন করা হয়েছে।\n\n🆔 <b>অর্ডার আইডি:</b> #${tgEscape(orderShortId(order))}\n${details}${extra}\n\n<b>আমাদের সাথে নিরাপদ লেনদেনের জন্য ধন্যবাদ।</b>`;
+      }
+
+      if(status === 'rejected'){
+        return `❌ <b>অর্ডার বাতিল করা হয়েছে</b>\n\nআপনার অর্ডারটি যাচাই করা হয়েছে, কিন্তু এই মুহূর্তে অনুমোদন করা সম্ভব হয়নি। বিস্তারিত জানতে সাপোর্টে যোগাযোগ করুন।\n\n🆔 <b>অর্ডার আইডি:</b> #${tgEscape(orderShortId(order))}\n${details}\n💳 <b>মাধ্যম:</b> ${tgEscape(order.method || '—')}\n\n<b>আমাদের সাথে থাকার জন্য ধন্যবাদ।</b>`;
+      }
+
+      return `ℹ️ <b>অর্ডার আপডেট হয়েছে</b>\n\nআপনার অর্ডারের স্ট্যাটাস আপডেট করা হয়েছে।\n\n🆔 <b>অর্ডার আইডি:</b> #${tgEscape(orderShortId(order))}\n${details}\n\n<b>আমাদের সাথে নিরাপদ লেনদেনের জন্য ধন্যবাদ।</b>`;
+    }
+
+    function buildPaymentPaidMessage(order){
+      let details = order.order_type === 'vpn' ? `🌐 <b>VPN:</b> ${tgEscape(order.vpn_brand || '—')}` : `🪙 <b>কয়েন:</b> ${tgEscape(order.coin || '—')}\n📦 <b>পরিমাণ:</b> ${Number(order.amt || 0).toLocaleString()}`;
+      return `💸 <b>পেমেন্ট সম্পন্ন হয়েছে</b>\n\nআপনার অর্ডারের পেমেন্ট সফলভাবে সম্পন্ন করা হয়েছে। অনুগ্রহ করে আপনার পেমেন্ট অ্যাকাউন্ট চেক করুন।\n\n🆔 <b>অর্ডার আইডি:</b> #${tgEscape(orderShortId(order))}\n${details}\n💰 <b>পেমেন্ট:</b> ${Number(order.payable || 0).toFixed(2)}৳\n💳 <b>মাধ্যম:</b> ${tgEscape(order.method || '—')}\n📱 <b>পেমেন্ট নম্বর:</b> ${tgEscape(getOrderPaymentNumber(order))}\n🔖 <b>রেফারেন্স:</b> ${tgEscape(order.payment_reference_id || '—')}\n\n<b>আমাদের সাথে নিরাপদ লেনদেনের জন্য ধন্যবাদ।</b>`;
+    }
+
+    function finishLoading(){
+      if(appLoaded) return; appLoaded = true;
+      $('loading').style.opacity = '0';
+      setTimeout(() => { $('loading').style.display = 'none'; }, 420);
+    }
+    function initFirebase(){
+      if(!firebaseConfig.apiKey || firebaseConfig.apiKey === 'API_KEY'){
+        firebaseReady = false; renderNoFirebaseState(); finishLoading(); return;
+      }
+      try{ firebase.initializeApp(firebaseConfig); db = firebase.database(); firebaseReady = true; }
+      catch(err){ firebaseReady = false; renderNoFirebaseState(); finishLoading(); }
+    }
+    function requireFirebase(){
+      if(firebaseReady && db) return true; showToast('Firebase not configured.','error'); return false;
+    }
+    function renderNoFirebaseState(){
+      $('market-list').innerHTML = '<div class="empty-state">Firebase not configured.</div>';
+      $('vpn-brand-list').innerHTML = '<div class="empty-state">Firebase not configured.</div>';
+    }
+    function registerCurrentUser(){
+      if(!firebaseReady || !db || !currentUserId) return;
+      const ref = db.ref('users/' + userRefKey);
+      ref.update({ userKey:userRefKey, telegram_chat_id:currentUserId, user_id:currentUserId, username:userUsername, display_name:userDisplayName, photo_url:tgUser.photo_url||'', is_online:true, last_active:firebase.database.ServerValue.TIMESTAMP }).catch(()=>{});
+      try{ db.ref('.info/connected').on('value', snap => { if(snap.val()){ ref.update({is_online:true,last_active:firebase.database.ServerValue.TIMESTAMP}).catch(()=>{}); ref.onDisconnect().update({is_online:false,last_seen:firebase.database.ServerValue.TIMESTAMP}).catch(()=>{}); } }); }catch(e){}
+    }
+
+    function initUserProfile(){
+      $('u-name').textContent = userDisplayName || 'Guest';
+      $('u-tag').textContent = '@' + (userUsername || 'no_username');
+      $('pfp').src = tgUser.photo_url || DEFAULT_PROFILE_IMAGE;
+      $('loader-logo').src = DEFAULT_LOADER_LOGO;
+      $('brand-text').textContent = normalizeBrandName(APP_DEFAULT_NAME);
+      $('admin-brand-name').textContent = normalizeBrandName(APP_DEFAULT_NAME);
+      $('fee-val').textContent = `- ${SEND_FEE.toFixed(2)} ৳`;
+      $('fee-note').textContent = `${SEND_FEE} TK Send Money Fee Deducted`;
+      renderDisclaimerNotice();
+      if(isAdmin) $('admin-btn').classList.remove('hidden');
+    }
+
+    function startUserListeners(){
+      if(!firebaseReady) return;
+      registerCurrentUser();
+      // Fast initial load with once(), then live updates with on()
+      if(currentUserId){ db.ref('users/' + userRefKey).on('value', snap => { userRegistryCache = {...userRegistryCache, [userRefKey]: snap.val()||{}}; guardBannedUser(); }); }
+      // Settings: once for initial fast render
+      db.ref('settings/branding').once('value', snap => {
+        const b = snap.val() || {}; const name = normalizeBrandName(b.siteName || APP_DEFAULT_NAME);
+        document.title = name; $('brand-text').textContent = name; $('admin-brand-name').textContent = name;
+      });
+      db.ref('settings/branding').on('value', snap => {
+        const b = snap.val() || {}; const name = normalizeBrandName(b.siteName || APP_DEFAULT_NAME);
+        document.title = name; $('brand-text').textContent = name; $('admin-brand-name').textContent = name; sanitizeLegacyBrandInDom();
+      });
+      db.ref('settings/links').on('value', snap => { const l = snap.val() || {}; channelLinkValue = normalizeLink(l.channel); helpLinkValue = normalizeLink(l.help); });
+      db.ref('settings/disclaimer').on('value', snap => { disclaimerNoticeValue = normalizeDisclaimerNotice(typeof snap.val() === 'string' ? snap.val() : snap.val()?.noticeText); renderDisclaimerNotice(); });
+      // Priority: market + payments fire fast
+      const _mkLoad = db.ref('marketConfig').on('value', snap => { marketCache = snap.val() || {}; renderMarket(marketCache); finishLoading(); });
+      db.ref('paymentMethods').on('value', snap => { paymentMethodsCache = snap.val() || {}; renderUserCoinPayments(paymentMethodsCache); finishLoading(); });
+      db.ref('vpnConfig').on('value', snap => { vpnConfigCache = snap.val() || {}; renderVpns(vpnConfigCache); });
+      db.ref('vpnPaymentMethods').on('value', snap => { vpnPaymentMethodsCache = snap.val() || {}; renderUserVpnPayments(vpnPaymentMethodsCache); });
+      db.ref('orders').orderByChild('userKey').equalTo(userRefKey).on('value', snap => renderUserHistory(snap.val() || {}));
+      db.ref('tutorialVideos').on('value', snap => { tutorialCache = snap.val() || {}; renderTutorialVideos(tutorialCache); });
+      setTimeout(finishLoading, 1800);
+    }
+
+    function renderMarket(data){
+      const entries = Object.entries(data || {});
+      if(!entries.length){ $('market-list').innerHTML = '<div class="empty-state">No coins available</div>'; return; }
+      // Sort by sortOrder field
+      entries.sort(([,a],[,b]) => (Number(a.sortOrder)||0) - (Number(b.sortOrder)||0));
+      const frag = entries.map(([key,v],idx) => {
+        const on = v.status !== false;
+        const logo = v.logo ? `<img src="${escapeHtml(v.logo)}" alt="logo" loading="lazy">` : '<span style="font-size:22px;">💰</span>';
+        const sellBtn = on ? `<button class="sell-coin-btn" type="button" onclick="openCoinDetailModal('${escapeHtml(key)}')">🪙 SELL COIN</button>` : '';
+        return `<div class="coin-card ${on?'online':''}" style="animation-delay:${idx*.05}s;${on?'cursor:pointer;':''}">
+          <div class="coin-card-top" onclick="${on?`openCoinDetailModal('${escapeHtml(key)}')`:'' }">
+            <div class="coin-logo-wrap">${logo}</div>
+            <div><div class="coin-name-txt">${escapeHtml(key)}</div><div class="coin-label-txt">MARKET ASSET</div></div>
+            <div class="status-pill ${on?'on':'off'}"><div class="s-dot ${on?'on':'off'}"></div>${on?'ONLINE':'OFFLINE'}</div>
+          </div>
+          ${sellBtn}
+        </div>`;
+      }).join('');
+      $('market-list').innerHTML = frag;
+    }
+
+    function formatCoinNum(n){
+      const num = Number(n||0);
+      if(num>=1000000){
+        const m = num/1000000;
+        return (m === Math.floor(m) ? m.toFixed(0) : m.toFixed(2)) + 'M';
+      }
+      if(num>=1000) return (num/1000).toLocaleString()+'K';
+      return num.toLocaleString();
+    }
+
+    function openCoinDetailModal(key){
+      if(guardBannedUser()) return;
+      const v = marketCache[key]||{};
+      if(v.status===false) return;
+      // Coin name
+      $('cd-coin-name').textContent = key;
+      // Logo
+      const wrap = $('cd-logo-wrap');
+      wrap.innerHTML = v.logo ? `<img src="${escapeHtml(v.logo)}" alt="logo" loading="lazy">` : '<span style="font-size:34px;">💰</span>';
+      // Tiers
+      let tiers = Array.isArray(v.pricingTiers) ? v.pricingTiers.filter(t=>Number(t.rate)>0) : [];
+      // Backward compat: legacy userRate/adminRate
+      if(!tiers.length){
+        if(Number(v.userRate)>0) tiers.push({from:0, to:Number(v.adminRateMinCoins||0)>0?Number(v.adminRateMinCoins)-1:999999999, rate:Number(v.userRate)});
+        if(Number(v.adminRate)>0 && Number(v.adminRateMinCoins)>0) tiers.push({from:Number(v.adminRateMinCoins), to:999999999, rate:Number(v.adminRate)});
+      }
+      $('cd-tiers-body').innerHTML = tiers.length ? tiers.map(t=>`
+        <div class="pricing-row">
+          <span class="pricing-row-range">${formatCoinNum(t.from)} – ${formatCoinNum(t.to)}</span>
+          <span class="pricing-row-rate">${Number(t.rate).toFixed(2)}</span>
+        </div>`).join('') : '<div style="padding:14px;text-align:center;color:var(--subtext);font-size:12px;">No pricing set yet</div>';
+      // Submit button
+      $('cd-submit-btn').onclick = ()=>{ $('coin-detail-modal').classList.remove('active'); openOrderModal(key); };
+      $('coin-detail-modal').classList.add('active');
+      try{ tg.HapticFeedback.impactOccurred('light'); }catch(e){}
+    }
+    
+    function renderVpns(data){
+      const entries = Object.entries(data || {});
+      if(!entries.length){ $('vpn-brand-list').innerHTML = '<div class="empty-state">No VPNs available</div>'; return; }
+      $('vpn-brand-list').innerHTML = entries.map(([key,v],idx) => {
+        const on = v.status !== false;
+        const logo = v.logo ? `<img src="${escapeHtml(v.logo)}">` : '<span style="font-size:24px;">🌐</span>';
+        return `<div class="coin-card ${on?'online':''}" onclick="${on ? `openVpnModal('${escapeHtml(key)}')` : ''}" style="animation-delay:${idx*.06}s;"><div class="coin-card-top"><div class="coin-logo-wrap">${logo}</div><div><div class="coin-name-txt">${escapeHtml(v.name || key)}</div><div class="coin-label-txt">PREMIUM VPN</div></div><div class="status-pill ${on?'on':'off'}"><div class="s-dot ${on?'on':'off'}"></div>${on?'ONLINE':'OFFLINE'}</div></div></div>`;
+      }).join('');
+    }
+
+    function renderUserCoinPayments(data){
+      const entries = Object.entries(data || {}).filter(([,v]) => v && v.status !== false);
+      // Populate hidden select (keeps existing submit logic working)
+      if($('m-select')) $('m-select').innerHTML = '<option value="">Select Method</option>' + entries.map(([key]) => `<option value="${escapeHtml(key)}">${escapeHtml(key)}</option>`).join('');
+      // Also render the visual payment cards in the sell form
+      renderSellFormPaymentCards();
+    }
+
+    // ===== PAYMENT SETTINGS - localStorage helpers =====
+    function getUserSavedPayments(){
+      try{
+        const key = 'paySettings_' + (currentUserId || 'guest');
+        const raw = localStorage.getItem(key);
+        return raw ? JSON.parse(raw) : {};
+      }catch(e){ return {}; }
+    }
+    function saveUserPaymentSetting(method, number){
+      try{
+        const key = 'paySettings_' + (currentUserId || 'guest');
+        const existing = getUserSavedPayments();
+        existing[method] = number;
+        localStorage.setItem(key, JSON.stringify(existing));
+        return true;
+      }catch(e){ return false; }
+    }
+
+    // Render the Payment Settings page
+    function renderPaymentSettingsPage(){
+      const container = $('payment-settings-list');
+      if(!container) return;
+      const methods = Object.entries(paymentMethodsCache || {}).filter(([,v]) => v && v.status !== false);
+      if(!methods.length){
+        container.innerHTML = '<div class="pay-settings-empty">⚠️ No payment methods available.<br>Admin hasn\'t added any payment methods yet.</div>';
+        return;
+      }
+      const saved = getUserSavedPayments();
+      container.innerHTML = methods.map(([key, v], i) => {
+        const savedNum = saved[key] || '';
+        const logoHtml = v.logo
+          ? `<img src="${escapeHtml(v.logo)}" alt="${escapeHtml(key)}">`
+          : '💳';
+        return `<div class="pay-settings-method-card">
+          <div class="pay-settings-method-head">
+            <div class="pay-settings-method-icon">${logoHtml}</div>
+            <div>
+              <div class="pay-settings-method-name">${escapeHtml(key)}</div>
+              <div class="pay-settings-method-saved">${savedNum ? '✓ Saved: ' + escapeHtml(savedNum) : 'Not saved yet'}</div>
+            </div>
+          </div>
+          <input type="text" id="pay-setting-num-${escapeHtml(key)}" class="form-input" placeholder="Enter your ${escapeHtml(key)} number" value="${escapeHtml(savedNum)}" inputmode="tel" style="margin-bottom:10px;">
+          <button class="pay-settings-save-btn" type="button" onclick="savePaymentSettingBtn('${escapeHtml(key)}')">
+            💾 Save ${escapeHtml(key)} Number
+          </button>
+        </div>`;
+      }).join('');
+    }
+
+    function savePaymentSettingBtn(method){
+      const input = $('pay-setting-num-' + method);
+      if(!input) return;
+      const number = input.value.trim();
+      if(!number){ showToast('Enter your payment number', 'error'); return; }
+      if(saveUserPaymentSetting(method, number)){
+        showToast('✓ ' + method + ' number saved!', 'success');
+        renderPaymentSettingsPage(); // re-render to update saved display
+        renderSellFormPaymentCards(); // update sell form too
+      }else{ showToast('Could not save. Try again.', 'error'); }
+    }
+
+    // Render sell-form payment method cards
+    function renderSellFormPaymentCards(){
+      const container = $('sell-pay-cards');
+      if(!container) return;
+      const methods = Object.entries(paymentMethodsCache || {}).filter(([,v]) => v && v.status !== false);
+      if(!methods.length){
+        container.innerHTML = '<div style="font-size:11px;color:var(--subtext);text-align:center;padding:12px 0;">No payment methods available.</div>';
+        return;
+      }
+      const saved = getUserSavedPayments();
+      const frag = methods.map(([key, v]) => {
+        const savedNum = saved[key] || sessionPayNumbers[key] || '';
+        const logoHtml = v.logo
+          ? `<img src="${escapeHtml(v.logo)}" alt="${escapeHtml(key)}">`
+          : '💳';
+        const isUSD = v.currency === 'USD';
+        const dollarRate = isUSD ? Number(v.dollarRate || 0) : 0;
+        const currBadge = isUSD
+          ? `<span class="usd-badge">$ USD @ ${dollarRate}৳</span>`
+          : `<span class="bdt-badge">৳ BDT</span>`;
+        const numHtml = savedNum
+          ? `<div class="sell-pay-num">${escapeHtml(savedNum)}</div>`
+          : `<div class="sell-pay-num nosaved">⚠ Number দাও</div>`;
+        return `<div class="sell-pay-card" id="sell-pay-card-${escapeHtml(key)}" onclick="selectSellPayMethod('${escapeHtml(key)}','${escapeHtml(savedNum)}')">
+          <div class="sell-pay-check" id="sell-pay-check-${escapeHtml(key)}"></div>
+          <div class="sell-pay-icon">${logoHtml}</div>
+          <div style="flex:1;min-width:0;">
+            <div class="sell-pay-name">${escapeHtml(key)} ${currBadge}</div>
+            ${numHtml}
+          </div>
+        </div>
+        <div class="sell-pay-inline-num hidden" id="inline-num-wrap-${escapeHtml(key)}">
+          <div style="font-size:9px;font-weight:900;color:var(--emerald);letter-spacing:1px;margin-bottom:6px;">📱 তোমার ${escapeHtml(key)} নম্বর দাও</div>
+          <input type="tel" class="form-input" id="inline-num-${escapeHtml(key)}" placeholder="${escapeHtml(key)} নম্বর" inputmode="tel" style="margin-bottom:0;">
+          <button type="button" class="inline-use-btn" onclick="confirmInlineNum('${escapeHtml(key)}')">✓ এই নম্বরে পাঠাবো</button>
+        </div>`;
+      }).join('');
+      container.innerHTML = frag;
+      // Re-select previous if still valid
+      if(currentSellPayMethod){
+        const prev = saved[currentSellPayMethod] || sessionPayNumbers[currentSellPayMethod] || '';
+        selectSellPayMethod(currentSellPayMethod, prev);
+      }
+    }
+
+    function selectSellPayMethod(method, number){
+      // Prefer session-entered number over saved number, then saved number
+      const effectiveNum = sessionPayNumbers[method] || number || '';
+      currentSellPayMethod = method;
+      currentSellPayNumber = effectiveNum;
+      // Update hidden fields for submit logic
+      if($('m-select')) $('m-select').value = method;
+      if($('m-num')) $('m-num').value = effectiveNum;
+      // Update visual state
+      document.querySelectorAll('.sell-pay-card').forEach(c => c.classList.remove('active'));
+      document.querySelectorAll('.sell-pay-check').forEach(c => { c.innerHTML = ''; });
+      // Hide all inline inputs first
+      document.querySelectorAll('[id^="inline-num-wrap-"]').forEach(el => el.classList.add('hidden'));
+      const card = $('sell-pay-card-' + method);
+      const check = $('sell-pay-check-' + method);
+      if(card) card.classList.add('active');
+      if(check) check.innerHTML = '✓';
+      // If no number saved/entered, show inline input
+      if(!effectiveNum){
+        const wrap = $('inline-num-wrap-' + method);
+        if(wrap){
+          wrap.classList.remove('hidden');
+          const inp = $('inline-num-' + method);
+          if(inp) setTimeout(()=>{ try{ inp.focus(); }catch(e){} }, 80);
+        }
+      }
+      // Re-run calc to update currency display
+      if(Number($('c-qty').value || 0)) calc();
+    }
+
+    function confirmInlineNum(method){
+      const input = $('inline-num-' + method);
+      if(!input) return;
+      const num = input.value.trim();
+      if(!num){ showToast('নম্বর দাও আগে', 'error'); return; }
+      sessionPayNumbers[method] = num;
+      currentSellPayNumber = num;
+      if($('m-num')) $('m-num').value = num;
+      // Update the card's num display
+      const card = $('sell-pay-card-' + method);
+      if(card){
+        const numEl = card.querySelector('.sell-pay-num');
+        if(numEl){ numEl.textContent = num; numEl.classList.remove('nosaved'); }
+      }
+      // Hide inline
+      const wrap = $('inline-num-wrap-' + method);
+      if(wrap) wrap.classList.add('hidden');
+      showToast(method + ' নম্বর সেট হয়েছে ✓', 'success');
+      try{ tg.HapticFeedback.notificationOccurred('success'); }catch(e){}
+    }
+
+    // Format K/M display
+    function formatKDisplay(kVal){
+      if(!kVal) return '—';
+      if(kVal >= 1000){
+        const m = kVal / 1000;
+        return (m === Math.floor(m) ? m.toFixed(0) : m.toFixed(2)) + 'M';
+      }
+      return (kVal === Math.floor(kVal) ? kVal.toFixed(0) : kVal.toFixed(2)) + 'K';
+    }
+
+    function renderUserVpnPayments(data){
+      const entries = Object.entries(data || {}).filter(([,v]) => v && v.status !== false);
+      if($('vpn-pay-methods-grid')) {
+         $('vpn-pay-methods-grid').innerHTML = entries.map(([key,v]) => {
+            const logoHtml = v.logo ? `<img src="${escapeHtml(v.logo)}">` : `<div style="width:40px;height:40px;border-radius:10px;background:var(--panel2);display:flex;align-items:center;justify-content:center;font-size:16px;">💳</div>`;
+            return `<div class="vpn-pay-card" data-pay-key="${escapeHtml(key)}" data-pay-num="${escapeHtml(v.number || '')}" onclick="selectVpnPayMethod('${escapeHtml(key)}', '${escapeHtml(v.number || '')}')">${logoHtml}<b>${escapeHtml(key)}</b></div>`;
+         }).join('');
+      }
+    }
+
+    function renderUserHistory(data){
+      const arr = Object.values(data || {}).sort((a,b) => getCreatedAt(b) - getCreatedAt(a));
+      const approved = arr.filter(o => getOrderStatus(o) === 'approved').length;
+      $('suc-count').textContent = approved;
+      if(!arr.length){ $('history-list').innerHTML = '<div class="empty-state">No orders yet</div>'; return; }
+      $('history-list').innerHTML = arr.map((o,i) => {
+        const info = getUserStatusInfo(o), isVpn = o.order_type === 'vpn', os = getOrderStatus(o);
+        const title = isVpn ? `${escapeHtml(o.vpn_brand)} - ${escapeHtml(o.vpn_plan)}` : escapeHtml(o.coin);
+        const badge = isVpn ? `<span class="hist-type-badge">VPN</span>` : `<span class="hist-type-badge" style="background:var(--sky-dark);">COIN</span>`;
+        let detailsHtml = '';
+        if(isVpn){
+           detailsHtml = `<div class="hist-info-cell"><div class="hic-label">PAYMENT</div><div class="hic-value">${escapeHtml(o.method)} (${escapeHtml(o.number)})</div></div><div class="hist-info-cell"><div class="hic-label">ORDER STATUS</div><div class="hic-value">${escapeHtml(info.label)}</div></div>`;
+           if(os === 'approved' && o.delivered_email){
+             detailsHtml += `<div style="grid-column:1/-1;background:rgba(167,139,250,.1);border:1px dashed var(--purple);border-radius:10px;padding:10px;margin-top:4px;">
+               <div style="font-size:9px;font-weight:900;color:var(--purple);margin-bottom:6px;text-transform:uppercase;">🔐 Delivery Credentials</div>
+               <div style="display:flex;justify-content:space-between;align-items:center;background:var(--panel2);padding:8px 10px;border-radius:8px;margin-bottom:6px;"><div><span style="font-size:8px;color:var(--subtext);display:block;">Email / ID</span><b style="font-size:11px;">${escapeHtml(o.delivered_email)}</b></div><button class="info-copy-btn" onclick="copyTextValue('${escapeHtml(o.delivered_email)}', 'Email')" style="margin:0;">Copy</button></div>
+               <div style="display:flex;justify-content:space-between;align-items:center;background:var(--panel2);padding:8px 10px;border-radius:8px;"><div><span style="font-size:8px;color:var(--subtext);display:block;">Password</span><b style="font-size:11px;">${escapeHtml(o.delivered_pass)}</b></div><button class="info-copy-btn" onclick="copyTextValue('${escapeHtml(o.delivered_pass)}', 'Password')" style="margin:0;">Copy</button></div>
+             </div>`;
+           }
+        }else{
+           detailsHtml = `<div class="hist-info-cell"><div class="hic-label">AMOUNT</div><div class="hic-value">${Number(o.amt)} ${escapeHtml(o.coin)}</div></div><div class="hist-info-cell"><div class="hic-label">METHOD</div><div class="hic-value">${escapeHtml(o.method)}</div></div><div class="hist-info-cell"><div class="hic-label">PAYMENT</div><div class="hic-value">${escapeHtml(o.number)}</div></div><div class="hist-info-cell"><div class="hic-label">SENDER</div><div class="hic-value">${escapeHtml(o.sender)}</div></div>`;
+        }
+        const payoutDisplay = (o.currency === 'USD' && o.payable_usd) ? `$${Number(o.payable_usd).toFixed(2)}` : money(o.payable);
+        return `<div class="hist-card"><div class="hist-top"><div><div class="hist-coin-label">${title} ${badge}</div><div class="hist-time">${formatDate(getCreatedAt(o))}</div></div><span class="hist-status-badge hs-${info.cls}">${escapeHtml(info.label).toUpperCase()}</span></div><div class="hist-body"><div class="hist-info-row">${detailsHtml}</div></div><div class="hist-footer"><span class="hist-order-id">💰 Total Payout</span><span class="hist-payout">${payoutDisplay}</span></div></div>`;
+      }).join('');
+    }
+    
+    function renderTutorialVideos(data){
+      const arr = Object.values(data || {}).filter(v => v && v.status !== false).sort((a,b) => (b.created_at || 0) - (a.created_at || 0));
+      if(!arr.length){ $('tutorial-list').innerHTML = '<div class="empty-state">No tutorial videos.</div>'; return; }
+      $('tutorial-list').innerHTML = arr.map((v,i) => {
+        return `<div class="tutorial-card" style="animation-delay:${i*.04}s;"><div class="tutorial-frame"><iframe src="https://www.youtube.com/embed/${escapeHtml(v.video_id)}" loading="lazy" allowfullscreen></iframe></div><div class="tutorial-meta"><div class="tutorial-title">${escapeHtml(v.video_title)}</div></div></div>`;
+      }).join('');
+    }
+
+    function openOrderModal(key){
+      if(guardBannedUser()) return;
+      const v = marketCache[key] || {}; selC = key; currentTID = v.transferId || '';
+      selMinSubmitLimit = Number(v.minSubmitLimit || DEFAULT_MIN_SUBMIT_LIMIT); selInputType = v.inputType || 'username';
+      // Build pricingTiers (with legacy fallback)
+      let tiers = Array.isArray(v.pricingTiers) ? v.pricingTiers.filter(t=>Number(t.rate)>0) : [];
+      if(!tiers.length){
+        if(Number(v.userRate)>0) tiers.push({from:0, to:Number(v.adminRateMinCoins||0)>0?Number(v.adminRateMinCoins)-1:999999999, rate:Number(v.userRate)});
+        if(Number(v.adminRate)>0 && Number(v.adminRateMinCoins)>0) tiers.push({from:Number(v.adminRateMinCoins), to:999999999, rate:Number(v.adminRate)});
+      }
+      selPricingTiers = tiers; selR = tiers.length ? tiers[0].rate : 0;
+      $('m-title').textContent = '⚡ Sell ' + key;
+      $('admin-id').textContent = currentTID || '—';
+      // Placeholder using full coin min
+      $('c-qty').placeholder = `e.g. ${selMinSubmitLimit} (Min: ${formatKDisplay(selMinSubmitLimit/1000)})`;
+      $('c-sender').placeholder = selInputType === 'code' ? 'Enter Transfer Code' : 'Sender Username';
+      ['c-qty','c-sender'].forEach(id => $(id).value = '');
+      $('coin-unit-val').textContent = '—'; $('base-val').textContent = '0.00 ৳'; $('fee-val').textContent = `- ${SEND_FEE.toFixed(2)} ৳`; $('c-res').textContent = '0.00 ৳';
+      resetProofInput(); finalP = 0;
+      // Reset payment method selection and render cards
+      currentSellPayMethod = ''; currentSellPayNumber = '';
+      if($('m-select')) $('m-select').value = '';
+      if($('m-num')) $('m-num').value = '';
+      renderSellFormPaymentCards();
+      $('order-modal').classList.add('active'); try{ tg.HapticFeedback.impactOccurred('light'); }catch(e){}
+    }
+    function closeOrderModal(){ $('order-modal').classList.remove('active'); }
+    function calc(){
+      const q = Number($('c-qty').value || 0);
+      const qK = q / 1000;
+      let activeRate = selR;
+      for(const tier of selPricingTiers){
+        if(q >= Number(tier.from) && (Number(tier.to) === 0 || q <= Number(tier.to))){ activeRate = Number(tier.rate); break; }
+      }
+      const base = qK * activeRate; // BDT
+      finalP = Math.max(0, base - SEND_FEE); // BDT (internal always BDT)
+      $('coin-unit-val').textContent = q ? formatKDisplay(qK) : '—';
+      // Check if selected payment method is USD
+      const selPayData = paymentMethodsCache[currentSellPayMethod];
+      const isUSD = selPayData && selPayData.currency === 'USD';
+      const dollarRate = isUSD ? Number(selPayData.dollarRate || 0) : 0;
+      if(isUSD && dollarRate > 0){
+        const baseUSD = base / dollarRate;
+        const feeUSD = SEND_FEE / dollarRate;
+        const finalUSD = Math.max(0, baseUSD - feeUSD);
+        $('base-val').textContent = `$${baseUSD.toFixed(2)}`;
+        $('fee-val').textContent = `- $${feeUSD.toFixed(2)}`;
+        $('c-res').textContent = `$${finalUSD.toFixed(2)}`;
+      } else {
+        $('base-val').textContent = money(base);
+        $('fee-val').textContent = `- ${SEND_FEE.toFixed(2)} ৳`;
+        $('c-res').textContent = money(finalP);
+      }
+    }
+    function resetProofInput(){
+      proofFileName = ''; proofImageDataUrl = ''; proofProcessing = false;
+      if($('proof-file')) $('proof-file').value = '';
+      if($('proof-preview')) $('proof-preview').classList.add('hidden');
+      if($('proof-preview-img')) $('proof-preview-img').removeAttribute('src');
+      if($('proof-select-btn')) $('proof-select-btn').textContent = '+ Upload Transfer Screenshot';
+    }
+    async function handleProofFileChange(e){
+      const file = e.target.files && e.target.files[0]; if(!file) return;
+      if(!/^image\//i.test(file.type || '')){ resetProofInput(); showToast('Only image upload','error'); return; }
+      try{
+        proofProcessing = true; proofFileName = file.name || 'proof.jpg'; $('proof-select-btn').textContent = 'Processing...';
+        proofImageDataUrl = await compressImageFile(file);
+        $('proof-preview-img').src = proofImageDataUrl; $('proof-file-name').textContent = proofFileName; $('proof-preview').classList.remove('hidden'); $('proof-select-btn').textContent = 'Change Screenshot'; showToast('Screenshot ready','success');
+      }catch(err){ resetProofInput(); showToast('Process failed','error'); }finally{ proofProcessing = false; }
+    }
+    function showConfirm(){
+      if(!requireFirebase()) return;
+      const q = Number($('c-qty').value || 0);
+      const sender = $('c-sender').value.trim(), number = $('m-num').value.trim(), method = $('m-select').value;
+      if(!selC){ showToast('Coin select koro','error'); return; }
+      if(!q || q < selMinSubmitLimit){ showToast(`Min ${selMinSubmitLimit} coins dite hobe`,'error'); return; }
+      if(!sender){ showToast('Sender ID/username dao','error'); return; }
+      if(!method){ showToast('Payment method select koro','error'); return; }
+      if(!number){ showToast('Payment number dao','error'); return; }
+      if(!proofImageDataUrl){ showToast('Proof screenshot upload koro','error'); return; }
+      calc();
+      const selPayData = paymentMethodsCache[method];
+      const isUSD = selPayData && selPayData.currency === 'USD';
+      const dollarRate = isUSD ? Number(selPayData.dollarRate || 0) : 0;
+      let totalDisplay, methodLabel, feeLabel;
+      if(isUSD && dollarRate > 0){
+        const finalUSD = finalP / dollarRate;
+        totalDisplay = `$${finalUSD.toFixed(2)}`;
+        methodLabel = `${method} (1$=${dollarRate}৳)`;
+        feeLabel = `$${(SEND_FEE/dollarRate).toFixed(2)} fee deducted`;
+      } else {
+        totalDisplay = money(finalP);
+        methodLabel = method;
+        feeLabel = `${SEND_FEE} TK Send Money Fee Deducted`;
+      }
+      $('sum-amt').textContent = q.toLocaleString() + ' ' + selC;
+      $('sum-method').textContent = methodLabel;
+      $('sum-number').textContent = number;
+      $('sum-sender').textContent = sender;
+      $('sum-total').textContent = totalDisplay;
+      $('fee-note').textContent = feeLabel;
+      $('submit-btn').onclick = submitOrder;
+      $('confirm-modal').classList.add('active');
+    }
+    function hideConfirm(){ $('confirm-modal').classList.remove('active'); }
+    function submitOrder(){
+      if(submitting || !requireFirebase() || guardBannedUser()) return;
+      const q = Number($('c-qty').value || 0);
+      const qK = q / 1000;
+      const sender = $('c-sender').value.trim(), number = $('m-num').value.trim(), method = $('m-select').value;
+      let activeRate = selR;
+      for(const tier of selPricingTiers){ if(q >= Number(tier.from) && (Number(tier.to)===0||q<=Number(tier.to))){ activeRate=Number(tier.rate); break; } }
+      const coinUnit = qK;
+      // Currency info
+      const selPayData = paymentMethodsCache[method];
+      const isUSD = selPayData && selPayData.currency === 'USD';
+      const dollarRate = isUSD ? Number(selPayData.dollarRate || 0) : 0;
+      const payableBDT = parseFloat(finalP.toFixed(2));
+      const payableUSD = (isUSD && dollarRate > 0) ? parseFloat((finalP / dollarRate).toFixed(2)) : null;
+      submitting = true; const btn = $('submit-btn'); btn.textContent = '⏳ Submitting...'; btn.disabled = true;
+      const orderRef = db.ref('orders').push(); const orderId = orderRef.key;
+      const orderData = {
+        id:orderId, user_id:currentUserId, userId:currentUserId, telegram_chat_id:currentUserId, userKey:userRefKey, user:userDisplayName, username:userUsername, order_type:'coin',
+        coin:selC, amt:q, coinUnit:parseFloat(coinUnit.toFixed(4)), payable:payableBDT,
+        currency: isUSD ? 'USD' : 'BDT', dollarRate: dollarRate || null, payable_usd: payableUSD,
+        sender, number, method, targetId:currentTID, appliedRate:activeRate,
+        proof_image_url:proofImageDataUrl, proof_file_name:proofFileName, proof_uploaded:true, status:'pending', order_status:'pending', payment_status:'pending', timestamp:firebase.database.ServerValue.TIMESTAMP, created_at:firebase.database.ServerValue.TIMESTAMP
+      };
+      orderRef.set(orderData).then(() => {
+        sendTelegramPhoto(TELEGRAM_ADMIN_CHAT_ID, proofImageDataUrl, buildNewOrderMessage(orderData)); 
+        sendUserTelegramMessage(orderData, buildUserOrderSubmittedMessage(orderData));
+        hideConfirm(); closeOrderModal(); showToast('✓ Order Submitted!','success'); userSwitchTab('history-scr');
+      }).catch(err => { showToast('Submit failed','error'); }).finally(() => { submitting = false; btn.textContent = '✓ Submit'; btn.disabled = false; });
+    }
+
+    function openVpnModal(key){
+      if(guardBannedUser()) return;
+      const vpn = vpnConfigCache[key]; if(!vpn) return;
+      selVpnBrand = key; selVpnPlanName = ''; selVpnPlanPrice = 0; selVpnPayMethod = ''; selVpnPayNumberTarget = '';
+      $('vpn-checkout-title').textContent = vpn.name || key;
+      
+      const plansContainer = $('vpn-plan-container'); plansContainer.innerHTML = '';
+      if(vpn.plans){
+         vpn.plans.forEach((p, idx) => {
+            if(p.name && p.price > 0){
+               plansContainer.innerHTML += `<div class="vpn-plan-card" onclick="selectVpnPlan('${escapeHtml(p.name)}', ${p.price})"><span>${escapeHtml(p.name)}</span><b>${money(p.price)}</b></div>`;
+            }
+         });
+      }else{ plansContainer.innerHTML = `<div style="color:var(--subtext);text-align:center;">No active plans available right now.</div>`; }
+      
+      $('vpn-step-plans').classList.remove('hidden'); $('vpn-step-payment').classList.add('hidden');
+      $('vpn-checkout-modal').classList.add('active'); try{ tg.HapticFeedback.impactOccurred('light'); }catch(e){}
+    }
+    function selectVpnPlan(planName, price){
+      selVpnPlanName = planName; selVpnPlanPrice = price;
+      $('vpn-payable-amount').textContent = money(price);
+      $('vpn-step-plans').classList.add('hidden'); $('vpn-step-payment').classList.remove('hidden');
+      document.querySelectorAll('.vpn-pay-card').forEach(c => c.classList.remove('active'));
+      $('vpn-pay-details').classList.add('hidden');
+      resetVpnProofInput();
+    }
+    function selectVpnPayMethod(key, targetNum){
+      selVpnPayMethod = key; selVpnPayNumberTarget = targetNum;
+      document.querySelectorAll('.vpn-pay-card').forEach(c => {
+         if(c.dataset.payKey === key) c.classList.add('active'); else c.classList.remove('active');
+      });
+      $('vpn-pay-target').textContent = targetNum || 'N/A';
+      $('vpn-pay-details').classList.remove('hidden');
+      try{ tg.HapticFeedback.impactOccurred('light'); }catch(e){}
+    }
+    function resetVpnProofInput(){
+      vpnProofFileName = ''; vpnProofImageDataUrl = ''; vpnProofProcessing = false;
+      if($('vpn-proof-file')) $('vpn-proof-file').value = '';
+      if($('vpn-proof-preview')) $('vpn-proof-preview').classList.add('hidden');
+      if($('vpn-proof-preview-img')) $('vpn-proof-preview-img').removeAttribute('src');
+      if($('vpn-proof-select-btn')) $('vpn-proof-select-btn').textContent = '+ Upload Payment Screenshot';
+    }
+    async function handleVpnProofFileChange(e){
+      const file = e.target.files && e.target.files[0]; if(!file) return;
+      if(!/^image\//i.test(file.type || '')){ resetVpnProofInput(); showToast('Only image upload','error'); return; }
+      try{
+        vpnProofProcessing = true; vpnProofFileName = file.name || 'vpn_proof.jpg'; $('vpn-proof-select-btn').textContent = 'Processing...';
+        vpnProofImageDataUrl = await compressImageFile(file);
+        $('vpn-proof-preview-img').src = vpnProofImageDataUrl; $('vpn-proof-file-name').textContent = vpnProofFileName; $('vpn-proof-preview').classList.remove('hidden'); $('vpn-proof-select-btn').textContent = 'Change Screenshot'; showToast('Screenshot ready','success');
+      }catch(err){ resetVpnProofInput(); showToast('Process failed','error'); }finally{ vpnProofProcessing = false; }
+    }
+    function submitVpnOrder(){
+      if(submitting || !requireFirebase() || guardBannedUser()) return;
+      const numOrTrx = $('vpn-pay-trx').value.trim();
+      if(!selVpnBrand || !selVpnPlanName || !selVpnPayMethod || !numOrTrx){ showToast('Fill all fields correctly','error'); return; }
+      if(!vpnProofImageDataUrl){ showToast('Upload payment proof screenshot','error'); return; }
+      
+      submitting = true; const btn = $('submit-vpn-order-btn'); btn.textContent = '⏳ Submitting...'; btn.disabled = true;
+      const orderRef = db.ref('orders').push(); const orderId = orderRef.key;
+      const orderData = {
+        id:orderId, user_id:currentUserId, userId:currentUserId, telegram_chat_id:currentUserId, userKey:userRefKey, user:userDisplayName, username:userUsername, order_type:'vpn',
+        vpn_brand:selVpnBrand, vpn_plan:selVpnPlanName, payable:parseFloat(selVpnPlanPrice.toFixed(2)), method:selVpnPayMethod, number:numOrTrx, targetId:selVpnPayNumberTarget,
+        proof_image_url:vpnProofImageDataUrl, proof_file_name:vpnProofFileName, proof_uploaded:true, status:'pending', order_status:'pending', payment_status:'pending', timestamp:firebase.database.ServerValue.TIMESTAMP, created_at:firebase.database.ServerValue.TIMESTAMP
+      };
+      orderRef.set(orderData).then(() => {
+        sendTelegramPhoto(TELEGRAM_ADMIN_CHAT_ID, vpnProofImageDataUrl, buildNewOrderMessage(orderData)); 
+        sendUserTelegramMessage(orderData, buildUserOrderSubmittedMessage(orderData));
+        $('vpn-checkout-modal').classList.remove('active'); showToast('✓ VPN Order Submitted!','success'); userSwitchTab('history-scr');
+      }).catch(err => { showToast('Submit failed','error'); }).finally(() => { submitting = false; btn.textContent = 'CONFIRM VPN ORDER →'; btn.disabled = false; });
+    }
+
+    function userSwitchTab(screenId){
+      ['home-scr','vpn-scr','history-scr','tutorial-scr','payment-settings-scr'].forEach(s => {
+        const el = $(s); if(!el) return;
+        const show = s === screenId;
+        el.style.display = show ? 'block' : 'none';
+        // Prevent CSS entrance animations (riseUp/fadeIn) from replaying on every tab switch — instant render only
+        if(show) el.classList.add('no-replay-anim');
+      });
+      document.querySelectorAll('#user-nav .nav-tab').forEach(tab => tab.classList.toggle('active', tab.dataset.screen === screenId));
+      // Render payment settings page when switching to it
+      if(screenId === 'payment-settings-scr') renderPaymentSettingsPage();
+      // Refresh sell form cards when returning home (in case settings changed)
+      if(screenId === 'home-scr') renderSellFormPaymentCards();
+      try{ tg.HapticFeedback.impactOccurred('light'); }catch(e){}
+    }
+    function openSafeLink(url){ const s = normalizeLink(url); if(!s){ showToast('Link not set.','error'); return; } window.open(s,'_blank','noopener,noreferrer'); }
+    
+    // Robust Copy Method (from Update 0.2)
+    function fallbackCopyText(txt){
+      const ta = document.createElement('textarea'); 
+      ta.value = txt; ta.setAttribute('readonly',''); 
+      ta.style.position = 'fixed'; ta.style.left = '-9999px'; ta.style.top = '0'; 
+      document.body.appendChild(ta); ta.focus(); ta.select(); 
+      const ok = document.execCommand('copy'); ta.remove(); 
+      if(!ok) throw new Error('copy-failed');
+    }
+    async function copyTextValue(txt,label='Data'){
+      const value = String(txt || '').trim(); if(!value || value === '—'){ showToast('No data to copy','warning'); return; }
+      try{ 
+          if(navigator.clipboard && navigator.clipboard.writeText) await navigator.clipboard.writeText(value); 
+          else fallbackCopyText(value); 
+          try{ tg.HapticFeedback.notificationOccurred('success'); }catch(e){} 
+          showToast(`${label} copied`,'success'); 
+      }catch(e){ 
+          try{ fallbackCopyText(value); showToast(`${label} copied`,'success'); }
+          catch(err){ showToast('Copy failed','error'); } 
+      }
+    }
+    function copyID(){ copyTextValue(currentTID || $('admin-id').textContent, 'Transfer ID'); }
+
+    function cleanAdminRouteFromUrl() {
+      try { const url = new URL(location.href); url.searchParams.delete('admin'); return url.pathname + url.search + url.hash; } catch(e) { return location.pathname; }
+    }
+    function showUserPanel(){
+      $('access-denied').style.display = 'none';
+      $('admin-panel').classList.add('hidden');
+      $('user-panel').classList.remove('hidden');
+      $('user-nav').classList.remove('hidden');
+      $('cv').style.display = 'none';
+      document.body.style.padding = '14px 13px 120px';
+      try { history.replaceState(null,'',cleanAdminRouteFromUrl()); } catch(e) {}
+    }
+    function showAdminPanel(){
+      if(!isAdmin){ $('access-denied').style.display = 'flex'; return; }
+      $('user-panel').classList.add('hidden'); $('user-nav').classList.add('hidden'); $('admin-panel').classList.remove('hidden');
+      if(!adminStarted){ startAdminSystem(); adminStarted = true; }
+    }
+
+    function startAdminSystem(){
+      if(!requireFirebase()) return;
+      db.ref('orders').on('value', snap => {
+        globalOrders = snap.val() || {}; const cnt = {pending:0,approved:0,rejected:0,payment:0,paid:0};
+        Object.values(globalOrders).forEach(o => { 
+          if (o.hidden_for_admin) return; // Ignore deleted records
+          const os = getOrderStatus(o), ps = getPaymentStatus(o); 
+          if(cnt[os] !== undefined) cnt[os]++; 
+          if(os === 'approved' && ps === 'pending') cnt.payment++; 
+          if(os === 'approved' && ps === 'paid') cnt.paid++; 
+        });
+        $('stat-pending').textContent = cnt.pending; $('cnt-pending').textContent = cnt.pending; $('cnt-completed').textContent = cnt.approved; $('cnt-rejected').textContent = cnt.rejected; if($('cnt-payment')) $('cnt-payment').textContent = cnt.payment;
+        if(currentAdminTab !== 'settings') renderAdminOrders(); renderUserTrackingSystem();
+      });
+      db.ref('users').on('value', snap => { userRegistryCache = snap.val() || {}; renderUserTrackingSystem(); });
+      db.ref('marketConfig').on('value', snap => { marketCache = snap.val() || {}; renderAdminCoins(marketCache); });
+      db.ref('vpnConfig').on('value', snap => { vpnConfigCache = snap.val() || {}; renderAdminVpns(vpnConfigCache); });
+      db.ref('paymentMethods').on('value', snap => { paymentMethodsCache = snap.val() || {}; renderAdminCoinPayments(paymentMethodsCache); });
+      db.ref('vpnPaymentMethods').on('value', snap => { vpnPaymentMethodsCache = snap.val() || {}; renderAdminVpnPayments(vpnPaymentMethodsCache); });
+      db.ref('tutorialVideos').on('value', snap => { tutorialCache = snap.val() || {}; renderAdminTutorials(tutorialCache); });
+      db.ref('settings/branding').on('value', snap => { const b = snap.val() || {}; $('site-name').value = normalizeBrandName(b.siteName || APP_DEFAULT_NAME); });
+      db.ref('settings/links').on('value', snap => { const l = snap.val() || {}; $('link-channel').value = l.channel || ''; $('link-help').value = l.help || ''; });
+      db.ref('settings/disclaimer').on('value', snap => { disclaimerNoticeValue = normalizeDisclaimerNotice(typeof snap.val() === 'string' ? snap.val() : snap.val()?.noticeText); renderDisclaimerNotice(); });
+    }
+    
+    function adminSwitchTab(tab){
+      currentAdminTab = tab; document.querySelectorAll('[data-admin-tab]').forEach(t => t.classList.toggle('active', t.dataset.adminTab === tab));
+      const isSet = tab === 'settings'; $('order-section').style.display = isSet ? 'none' : 'block'; $('settings-section').style.display = isSet ? 'block' : 'none';
+      $('order-section').classList.add('no-replay-anim'); $('settings-section').classList.add('no-replay-anim');
+      if($('payment-tools')) $('payment-tools').classList.toggle('hidden', tab !== 'payment');
+      if(isSet){ openSettingsMain(); }else{ renderAdminOrders(); }
+    }
+    function openSettingsMain(){ $('settings-main-page').classList.remove('hidden'); document.querySelectorAll('.settings-module-page').forEach(p => p.classList.add('hidden')); }
+    function openSettingsModule(key){
+      if(!key){ openSettingsMain(); return; }
+      $('settings-main-page').classList.add('hidden'); document.querySelectorAll('.settings-module-page').forEach(p => p.classList.toggle('hidden', p.dataset.settingsPage !== key));
+    }
+    
+    function renderAdminOrders(){
+      const q = currentAdminTab === 'payment' && $('payment-search') ? $('payment-search').value.trim().toLowerCase() : '';
+      const payFilter = currentAdminTab === 'payment' && $('payment-filter') ? $('payment-filter').value : 'pending';
+      let arr = Object.values(globalOrders || {}).filter(o => {
+        if(o.hidden_for_admin) return false; // Filter out orders hidden by admin
+        const os = getOrderStatus(o), ps = getPaymentStatus(o);
+        if(currentAdminTab === 'pending') return os === 'pending';
+        if(currentAdminTab === 'approved') return os === 'approved';
+        if(currentAdminTab === 'rejected') return os === 'rejected';
+        if(currentAdminTab === 'payment'){
+          if(os !== 'approved') return false; if(payFilter === 'pending' && ps !== 'pending') return false; if(payFilter === 'paid' && ps !== 'paid') return false;
+          return q ? normalizeOrderForSearch(o).includes(q) : true;
+        } return false;
+      }).sort((a,b) => getCreatedAt(b) - getCreatedAt(a));
+      
+      if(!arr.length){ $('order-list').innerHTML = `<div class="empty-state">No orders here</div>`; return; }
+      $('order-list').innerHTML = arr.map((o,i) => {
+        const os = getOrderStatus(o), ps = getPaymentStatus(o), isVpn = o.order_type === 'vpn';
+        const displayName = o.username && o.username !== 'no_username' ? '@' + o.username : (o.user || '—');
+        const cardClass = currentAdminTab === 'payment' ? (ps === 'paid' ? 'paid' : 'payment') : os;
+        
+        let actionBtns = '';
+        if(os === 'pending'){
+           if(isVpn){ actionBtns = `<button class="btn-accept" type="button" onclick="openStockDeliveryModal('${escapeHtml(o.id)}', '${escapeHtml(o.vpn_brand)}')">📦 Deliver Account</button><button class="btn-reject" type="button" onclick="updateOrderStatus('${escapeHtml(o.id)}','rejected')">✗ Reject</button>`; }
+           else{ actionBtns = `<button class="btn-accept" type="button" onclick="updateOrderStatus('${escapeHtml(o.id)}','approved')">✓ Approve</button><button class="btn-reject" type="button" onclick="updateOrderStatus('${escapeHtml(o.id)}','rejected')">✗ Reject</button>`; }
+        }
+        if(currentAdminTab === 'payment' && os === 'approved' && ps === 'pending'){
+           const proofReady = !!(o.payment_proof_image_url);
+           actionBtns = `<button class="btn-payment-proof ${proofReady ? 'has-proof' : ''}" type="button" onclick="paymentProofTargetOrderId='${escapeHtml(o.id)}'; document.getElementById('payment-proof-file').click();">${proofReady ? '✓ Screenshot Added' : 'Screenshot Submit'}</button><button class="btn-paid" type="button" onclick="openPaymentModal('${escapeHtml(o.id)}')">✓ Mark as Paid</button>`;
+        }
+        
+        const proofBtn = currentAdminTab === 'pending' ? `<button class="proof-view-btn" type="button" onclick="openProofModal('${escapeHtml(o.id)}')">👁 Proof</button>` : '';
+        
+        let gridHtml = '';
+        if(isVpn){
+            gridHtml += `<div class="info-cell"><small>VPN / PLAN</small><b>${escapeHtml(o.vpn_brand)} - ${escapeHtml(o.vpn_plan)}</b></div>`;
+            gridHtml += `<div class="info-cell"><small>METHOD</small><b>${escapeHtml(o.method)}</b></div>`;
+            gridHtml += `<div class="info-cell"><small>PAYMENT NUMBER</small><b style="cursor:pointer; color:var(--sky-dark); display:inline-flex; align-items:center; gap:4px;" onclick="copyTextValue('${escapeHtml(o.number)}', 'Payment Number')" title="Click to Copy">${escapeHtml(o.number)} <span>⧉</span></b></div>`;
+            gridHtml += `<div class="info-cell"><small>TARGET ID</small><b>${escapeHtml(o.targetId || '—')}</b></div>`;
+        } else {
+            gridHtml += `<div class="info-cell"><small>COIN (AMOUNT)</small><b>${Number(o.amt)} ${escapeHtml(o.coin)}</b></div>`;
+            gridHtml += `<div class="info-cell"><small>METHOD</small><b>${escapeHtml(o.method)}</b></div>`;
+            gridHtml += `<div class="info-cell"><small>PAYMENT NUMBER</small><b style="cursor:pointer; color:var(--sky-dark); display:inline-flex; align-items:center; gap:4px;" onclick="copyTextValue('${escapeHtml(o.number)}', 'Payment Number')" title="Click to Copy">${escapeHtml(o.number)} <span>⧉</span></b></div>`;
+            gridHtml += `<div class="info-cell"><small>SENDER (ID/CODE)</small><b style="cursor:pointer; color:var(--sky-dark); display:inline-flex; align-items:center; gap:4px;" onclick="copyTextValue('${escapeHtml(o.sender)}', 'Sender Info')" title="Click to Copy">${escapeHtml(o.sender)} <span>⧉</span></b></div>`;
+            gridHtml += `<div class="info-cell"><small>TARGET ID</small><b>${escapeHtml(o.targetId || '—')}</b></div>`;
+        }
+        gridHtml += `<div class="info-cell"><small>PAYOUT</small><b style="color:var(--emerald); font-size:14px;">${money(o.payable)}</b></div>`;
+        
+        return `<div class="order-card ${escapeHtml(cardClass)}" style="animation-delay:${i*.04}s;">
+          <div class="order-header"><div><div class="order-user">${escapeHtml(displayName)}</div><div class="order-id">#${escapeHtml(String(o.id).slice(-7))}</div></div><span class="order-badge badge-${os}">${os.toUpperCase()}</span></div>
+          <div class="info-grid">${gridHtml}</div>
+          <div class="order-actions">${proofBtn}${actionBtns}<button class="btn-del" type="button" onclick="deleteOrder('${escapeHtml(o.id)}')">Del</button></div>
+        </div>`;
+      }).join('');
+    }
+
+    function updateOrderStatus(id, status){
+      const order = globalOrders[id]; if(!order) return;
+      const patch = { order_status:status, status:status==='approved'?'completed':status, updated_at:firebase.database.ServerValue.TIMESTAMP };
+      if(status === 'approved'){ patch.payment_status = 'pending'; patch.approved_at = firebase.database.ServerValue.TIMESTAMP; }
+      Object.assign(order, patch); // local update for telegram message
+      db.ref('orders/' + id).update(patch).then(() => {
+        sendUserTelegramMessage(order, buildOrderStatusMessage(order, status));
+        renderAdminOrders(); showToast('Order updated','success'); if(status==='approved') adminSwitchTab('payment');
+      });
+    }
+    
+    function deleteOrder(id){ 
+      adminConfirm('Hide Order?','This order will be removed from your panel, but users can still see their history.','🗑️', () => { 
+        db.ref('orders/'+id).update({hidden_for_admin: true}).then(()=>showToast('Removed from panel','warning')); 
+      }); 
+    }
+
+    function openStockDeliveryModal(orderId, brandKey){
+       deliveryTargetOrderId = orderId; deliveryTargetVpnBrand = brandKey;
+       const stockObj = (vpnConfigCache[brandKey] || {}).stock || {};
+       const stockKeys = Object.keys(stockObj);
+       const listHtml = stockKeys.length ? stockKeys.map(sk => `<div class="user-row"><div style="display:flex;flex-direction:column;"><b style="font-size:12px;">${escapeHtml(stockObj[sk].email)}</b><span style="font-size:10px;color:var(--subtext);">${escapeHtml(stockObj[sk].pass)}</span></div><button class="btn-action btn-emerald" style="width:auto;padding:8px 12px;font-size:11px;" onclick="approveAndDeliverVpn('${orderId}', '${brandKey}', '${sk}')">Deliver</button></div>`).join('') : '<div class="empty-state">No stock available. Please add stock in settings.</div>';
+       $('admin-stock-select-list').innerHTML = listHtml;
+       $('admin-stock-modal').classList.add('active');
+    }
+    function approveAndDeliverVpn(orderId, brandKey, stockKey){
+       const order = globalOrders[orderId], stockItem = ((vpnConfigCache[brandKey] || {}).stock || {})[stockKey];
+       if(!order || !stockItem) return;
+       const patch = {
+          order_status: 'approved', status: 'completed', payment_status: 'pending', approved_at: firebase.database.ServerValue.TIMESTAMP,
+          delivered_email: stockItem.email, delivered_pass: stockItem.pass
+       };
+       Object.assign(order, patch); // update local order object for telegram
+       db.ref('orders/'+orderId).update(patch).then(() => {
+          db.ref(`vpnConfig/${brandKey}/stock/${stockKey}`).remove();
+          $('admin-stock-modal').classList.remove('active');
+          sendUserTelegramMessage(order, buildOrderStatusMessage(order, 'approved'));
+          renderAdminOrders(); showToast('VPN Delivered!','success'); adminSwitchTab('approved');
+       });
+    }
+
+    function openProofModal(id){
+      const o = globalOrders[id], src = String(o?.proof_image_url || '').trim();
+      if(!src) return showToast('No screenshot','warning');
+      proofModalSrc = src; $('proof-modal-img').src = src; $('proof-modal-caption').textContent = `#${String(o.id).slice(-7)}`; $('proof-modal').classList.add('active');
+    }
+    function closeProofModal(){ $('proof-modal').classList.remove('active'); proofModalSrc=''; }
+    
+    function openPaymentModal(id){
+      const o = globalOrders[id]; if(!o) return;
+      if(!o.payment_proof_image_url) return showToast('Upload Payment Screenshot First!','error');
+      paymentTargetOrderId = id; $('payment-ref-input').value = ''; $('payment-modal').classList.add('active');
+    }
+    function closePaymentModal(){ $('payment-modal').classList.remove('active'); }
+    function confirmMarkPaid(){
+      const id = paymentTargetOrderId, refVal = $('payment-ref-input').value.trim(), o = globalOrders[id];
+      if(!refVal) return showToast('Enter Reference ID','error');
+      const patch = { order_status:'approved', payment_status:'paid', paid_at:firebase.database.ServerValue.TIMESTAMP, payment_reference_id:refVal };
+      Object.assign(o, patch);
+      db.ref('orders/'+id).update(patch).then(()=>{ 
+        sendUserTelegramMessage(o, buildPaymentPaidMessage(o));
+        sendUserPaymentProofPhoto(o);
+        closePaymentModal(); renderAdminOrders(); showToast('Marked as Paid','success'); 
+      });
+    }
+
+    async function handlePaymentProofFileChange(e){
+      const file = e.target.files && e.target.files[0], id = paymentProofTargetOrderId; if(!file || !id) return;
+      try{
+        showToast('Processing...','warning'); const dataUrl = await compressImageFile(file);
+        await db.ref('orders/'+id).update({payment_proof_image_url:dataUrl}); showToast('Screenshot Uploaded!','success'); renderAdminOrders();
+      }catch(err){ showToast('Upload failed','error'); }finally{ paymentProofTargetOrderId=''; if(e.target) e.target.value=''; }
+    }
+
+    function renderAdminCoins(data){
+      const entries = Object.entries(data || {});
+      entries.sort(([,a],[,b]) => (Number(a.sortOrder)||0) - (Number(b.sortOrder)||0));
+      if(!entries.length){ $('coin-list').innerHTML = '<div class="empty-state">No coins added</div>'; return; }
+      $('coin-list').innerHTML = entries.map(([key,v]) => {
+        const tiers = Array.isArray(v.pricingTiers) ? v.pricingTiers.filter(t=>Number(t.rate)>0) : [];
+        const tiersHtml = tiers.length ? tiers.map((t,i)=>`
+          <div style="display:flex;justify-content:space-between;font-size:10px;padding:3px 0;border-bottom:${i<tiers.length-1?'1px dashed var(--border)':'none'};">
+            <span style="color:var(--subtext);">Tier ${i+1}: <b style="color:var(--text);">${Number(t.from).toLocaleString()} – ${Number(t.to).toLocaleString()}</b></span>
+            <b style="color:var(--emerald);">${Number(t.rate).toFixed(2)} ৳</b>
+          </div>`).join('') :
+          `<div style="font-size:10px;color:var(--subtext);">User: ${v.userRate||0}৳ | Admin: ${v.adminRate||0}৳ (Legacy)</div>`;
+        return `<div class="coin-box ${v.status===false?'offline':''}" data-coin-key="${escapeHtml(key)}">
+          <div class="coin-box-header" style="gap:8px;">
+            <div class="drag-handle" title="Hold & drag to reorder">⠿</div>
+            <div class="coin-name-row">${v.logo?`<img src="${escapeHtml(v.logo)}" class="coin-logo-sm" loading="lazy">`:'<span>💰</span>'}<span class="coin-key">${escapeHtml(key)}</span></div>
+            <label class="switch" style="margin-left:auto;"><input type="checkbox" onchange="updateDbField('marketConfig/${escapeHtml(key)}/status', this.checked)" ${v.status!==false?'checked':''}><span class="slider"></span></label>
+          </div>
+          <div style="margin:8px 0 4px;padding:6px 8px;background:rgba(0,0,0,.15);border-radius:8px;">${tiersHtml}</div>
+          <div style="font-size:10px;color:var(--subtext);margin-bottom:8px;padding:0 2px;">
+            Min: <b style="color:var(--text);">${v.minSubmitLimit||DEFAULT_MIN_SUBMIT_LIMIT}</b> | TID: <b style="color:var(--text);">${v.transferId||'N/A'}</b>
+          </div>
+          <div style="display:flex;gap:8px;">
+            <button class="btn-action btn-cyan" type="button" style="padding:9px;" onclick="openEditCoin('${escapeHtml(key)}')">Edit</button>
+            <button class="btn-action btn-danger" type="button" style="padding:9px;" onclick="db.ref('marketConfig/${escapeHtml(key)}').remove()">Remove</button>
+          </div>
+        </div>`;
+      }).join('');
+      initCoinDragSort();
+    }
+
+    function openEditCoin(key){
+      const v = marketCache[key]; if(!v) return;
+      editCoinTargetKey = key;
+      $('edit-c-name').value = v.name || key;
+      $('edit-c-tid').value = v.transferId || '';
+      $('edit-c-input-type').value = v.inputType || 'username';
+      $('edit-c-min-submit').value = v.minSubmitLimit || DEFAULT_MIN_SUBMIT_LIMIT;
+      // Load tiers (with legacy fallback)
+      let tiers = Array.isArray(v.pricingTiers) ? v.pricingTiers : [];
+      if(!tiers.length){
+        tiers = [
+          {from:0, to:Number(v.adminRateMinCoins||0)>0?Number(v.adminRateMinCoins)-1:0, rate:Number(v.userRate||0)},
+          {from:Number(v.adminRateMinCoins||0), to:0, rate:Number(v.adminRate||0)},
+          {from:0, to:0, rate:0}
+        ];
+      }
+      for(let i=1;i<=3;i++){
+        const t = tiers[i-1]||{};
+        $(`edit-c-t${i}-from`).value = t.from||0;
+        $(`edit-c-t${i}-to`).value = t.to||0;
+        $(`edit-c-t${i}-rate`).value = t.rate||0;
+      }
+      editCLogoDataUrl = v.logo || '';
+      if(editCLogoDataUrl){ $('edit-c-logo-preview-img').src = editCLogoDataUrl; $('edit-c-logo-preview').classList.remove('hidden'); }
+      else { $('edit-c-logo-preview').classList.add('hidden'); }
+      $('coin-edit-modal').classList.add('active');
+    }
+
+    function saveCoinEdit(){
+       if(!editCoinTargetKey) return;
+       const key = editCoinTargetKey;
+       const tiers = [];
+       for(let i=1;i<=3;i++){
+         const from=Number($(`edit-c-t${i}-from`).value||0);
+         const to=Number($(`edit-c-t${i}-to`).value||0);
+         const rate=Number($(`edit-c-t${i}-rate`).value||0);
+         if(rate>0) tiers.push({from,to,rate});
+       }
+       const patch = {
+          transferId: $('edit-c-tid').value.trim(),
+          inputType: $('edit-c-input-type').value,
+          pricingTiers: tiers,
+          minSubmitLimit: Number($('edit-c-min-submit').value),
+          logo: editCLogoDataUrl
+       };
+       db.ref('marketConfig/'+key).update(patch).then(()=>{
+          $('coin-edit-modal').classList.remove('active');
+          showToast('Coin Updated Successfully','success');
+       }).catch(()=>{ showToast('Update Failed','error'); });
+    }
+
+    function updateDbField(path, val){ db.ref(path).set(val).then(()=>showToast('Saved','success')).catch(()=>showToast('Failed','error')); }
+    
+    function renderAdminVpns(data){
+      const entries = Object.entries(data || {});
+      $('adm-vpn-list').innerHTML = entries.map(([key,v]) => {
+         let plansHtml = (v.plans || []).map((p, idx) => `<div class="form-row2" style="margin-bottom:8px;"><input type="text" class="form-input" placeholder="Plan Name" value="${escapeHtml(p.name||'')}" onchange="updateDbField('vpnConfig/${escapeHtml(key)}/plans/${idx}/name', this.value)"><input type="number" class="form-input" placeholder="Price" value="${p.price||''}" onchange="updateDbField('vpnConfig/${escapeHtml(key)}/plans/${idx}/price', Number(this.value))"></div>`).join('');
+         // Add blank plan fields to ensure there are always at least 2 input rows available in admin panel
+         if(!(v.plans && v.plans.length >= 2)){
+            const startIdx = v.plans ? v.plans.length : 0;
+            for(let idx=startIdx; idx<2; idx++) {
+               plansHtml += `<div class="form-row2" style="margin-bottom:8px;"><input type="text" class="form-input" placeholder="Plan Name" onchange="updateDbField('vpnConfig/${escapeHtml(key)}/plans/${idx}/name', this.value)"><input type="number" class="form-input" placeholder="Price" onchange="updateDbField('vpnConfig/${escapeHtml(key)}/plans/${idx}/price', Number(this.value))"></div>`;
+            }
+         }
+         
+         const stockList = Object.keys(v.stock||{}).map(sk => `<div class="user-row" style="padding:6px 10px;"><div style="font-size:10px;"><b>${escapeHtml(v.stock[sk].email)}</b> - ${escapeHtml(v.stock[sk].pass)}</div><button class="del-btn" onclick="db.ref('vpnConfig/${escapeHtml(key)}/stock/${escapeHtml(sk)}').remove()">DEL</button></div>`).join('');
+         
+         return `<div class="coin-box ${v.status===false?'offline':''}"><div class="coin-box-header"><div class="coin-name-row">${v.logo ? `<img src="${escapeHtml(v.logo)}" class="coin-logo-sm">` : '<span>🌐</span>'}<span class="coin-key">${escapeHtml(v.name||key)}</span></div><label class="switch"><input type="checkbox" onchange="updateDbField('vpnConfig/${escapeHtml(key)}/status', this.checked)" ${v.status!==false?'checked':''}><span class="slider"></span></label></div><div style="font-size:10px;font-weight:900;color:var(--sky-dark);margin-bottom:6px;">VPN PLANS</div>${plansHtml}<div class="add-form" style="margin-top:12px;margin-bottom:8px;"><div style="font-size:10px;font-weight:900;color:var(--purple);margin-bottom:6px;">ADD STOCK</div><div class="form-row2"><input type="text" id="sk-em-${escapeHtml(key)}" class="form-input" placeholder="Email/ID" style="margin:0;"><input type="text" id="sk-ps-${escapeHtml(key)}" class="form-input" placeholder="Password" style="margin:0;"></div><button class="btn-action btn-cyan" style="padding:8px;font-size:10px;margin-top:8px;" onclick="addStockItem('${escapeHtml(key)}')">Save to Stock</button></div>${stockList}<button class="btn-action btn-danger" type="button" style="margin-top:8px;padding:9px;" onclick="db.ref('vpnConfig/${escapeHtml(key)}').remove()">Remove Brand</button></div>`;
+      }).join('') || '<div class="empty-state">No VPN Brands added</div>';
+    }
+    
+    function addStockItem(brandKey){
+      const em = $(`sk-em-${brandKey}`).value.trim(), ps = $(`sk-ps-${brandKey}`).value.trim();
+      if(!em || !ps){ showToast('Enter Email and Pass','error'); return; }
+      db.ref(`vpnConfig/${brandKey}/stock`).push({email:em, pass:ps}).then(()=>{ showToast('Stock Added','success'); });
+    }
+
+    function renderAdminCoinPayments(data){
+      const entries = Object.entries(data || {});
+      $('payment-list').innerHTML = entries.map(([key,v]) => {
+        const isUSD = v.currency === 'USD';
+        const rateTag = isUSD
+          ? `<span style="font-size:8px;background:rgba(251,191,36,.18);color:var(--gold);padding:2px 6px;border-radius:6px;font-weight:900;margin-left:4px;">$1=${v.dollarRate}৳</span>`
+          : `<span style="font-size:8px;background:rgba(52,211,153,.12);color:var(--emerald);padding:2px 6px;border-radius:6px;font-weight:900;margin-left:4px;">৳ BDT</span>`;
+        return `<div class="pay-row"><div class="pay-name">${v.logo?`<img src="${escapeHtml(v.logo)}" style="width:24px;height:24px;border-radius:6px;object-fit:cover;">`:''} ${escapeHtml(key)} ${rateTag}</div><div class="pay-controls"><label class="switch"><input type="checkbox" onchange="updateDbField('paymentMethods/${escapeHtml(key)}/status', this.checked)" ${v.status!==false?'checked':''}><span class="slider"></span></label><button class="del-btn" onclick="db.ref('paymentMethods/${escapeHtml(key)}').remove()">DEL</button></div></div>`;
+      }).join('') || '<div class="empty-state">No methods added</div>';
+    }
+
+    function renderAdminVpnPayments(data){
+      const entries = Object.entries(data || {});
+      $('vpn-payment-list').innerHTML = entries.map(([key,v]) => `<div class="pay-row"><div class="pay-name">${v.logo?`<img src="${escapeHtml(v.logo)}" style="width:24px;height:24px;border-radius:6px;object-fit:cover;">`:''} ${escapeHtml(key)}</div><div class="pay-controls"><label class="switch"><input type="checkbox" onchange="updateDbField('vpnPaymentMethods/${escapeHtml(key)}/status', this.checked)" ${v.status!==false?'checked':''}><span class="slider"></span></label><button class="del-btn" onclick="db.ref('vpnPaymentMethods/${escapeHtml(key)}').remove()">DEL</button></div></div>`).join('') || '<div class="empty-state">No methods added</div>';
+    }
+
+    function renderAdminTutorials(data){
+      const entries = Object.entries(data || {}).sort(([,a],[,b]) => (b.created_at||0) - (a.created_at||0));
+      $('tutorial-admin-list').innerHTML = entries.map(([key,v]) => `<div class="tutorial-admin-card"><div class="tutorial-admin-head"><div><div class="tutorial-admin-title">${escapeHtml(v.video_title)}</div></div></div><button class="btn-action btn-danger" type="button" style="padding:9px;" onclick="db.ref('tutorialVideos/${escapeHtml(key)}').remove()">Delete</button></div>`).join('') || '<div class="empty-state">No tutorials</div>';
+    }
+
+    function adminConfirm(title,desc,icon,cb){
+      $('admin-confirm-title').textContent=title; $('admin-confirm-desc').textContent=desc; $('admin-confirm-icon').textContent=icon; adminConfirmCallback=cb; $('admin-confirm').classList.add('active');
+    }
+
+    async function handleLogoUpload(fileInputId, previewImgId, dataUrlVarName){
+      const file = $(fileInputId).files[0]; if(!file) return null;
+      try{
+        const dataUrl = await compressImageFile(file);
+        $(previewImgId).src = dataUrl; $(previewImgId).parentElement.classList.remove('hidden');
+        if(dataUrlVarName === 'vpnLogoDataUrl') vpnLogoDataUrl = dataUrl;
+        if(dataUrlVarName === 'payLogoDataUrl') payLogoDataUrl = dataUrl;
+        if(dataUrlVarName === 'vpnPayLogoDataUrl') vpnPayLogoDataUrl = dataUrl;
+        if(dataUrlVarName === 'cLogoDataUrl') cLogoDataUrl = dataUrl;
+        if(dataUrlVarName === 'editCLogoDataUrl') editCLogoDataUrl = dataUrl;
+        return dataUrl;
+      }catch(err){ showToast('Image optimization failed','error'); return null; }
+    }
+    
+    function addCoin(){
+      const n = $('c-name').value.trim(), key = safeDbKey(n).toUpperCase();
+      if(!n){ showToast('Enter name','error'); return; }
+      const tiers = [];
+      for(let i=1;i<=3;i++){
+        const from=Number($(`c-t${i}-from`).value||0);
+        const to=Number($(`c-t${i}-to`).value||0);
+        const rate=Number($(`c-t${i}-rate`).value||0);
+        if(rate>0) tiers.push({from,to,rate});
+      }
+      const sortOrder = Object.keys(marketCache).length;
+      db.ref('marketConfig/'+key).set({ name:n, transferId:$('c-tid').value.trim(), logo:cLogoDataUrl, inputType:$('c-input-type').value||'username', pricingTiers:tiers, minSubmitLimit:Number($('c-min-submit').value||DEFAULT_MIN_SUBMIT_LIMIT), status:true, sortOrder }).then(()=>{ 
+         $('c-name').value=''; $('c-tid').value=''; $('c-min-submit').value='';
+         for(let i=1;i<=3;i++){$(`c-t${i}-from`).value='';$(`c-t${i}-to`).value='';$(`c-t${i}-rate`).value='';}
+         cLogoDataUrl=''; $('c-logo-preview').classList.add('hidden');
+         showToast('Coin Added','success'); 
+      });
+    }
+    
+    function addVpnBrand(){
+      const n = $('v-name').value.trim(), key = safeDbKey(n).toUpperCase();
+      if(!n){ showToast('Enter Brand Name','error'); return; }
+      db.ref('vpnConfig/'+key).set({ name:n, logo:vpnLogoDataUrl, status:true, plans: [{name:'',price:0},{name:'',price:0}] }).then(()=>{ $('v-name').value=''; $('v-logo-preview').classList.add('hidden'); vpnLogoDataUrl=''; showToast('VPN Added','success'); });
+    }
+    
+    function addPaymentMethod(){
+      const n = $('new-pay').value.trim(), num = $('new-pay-num').value.trim(), key = safeDbKey(n);
+      if(!n){ showToast('Enter method name','error'); return; }
+      const currency = $('new-pay-currency') ? $('new-pay-currency').value : 'BDT';
+      const dollarRate = (currency === 'USD' && $('new-pay-dollar-rate')) ? Number($('new-pay-dollar-rate').value || 0) : 0;
+      if(currency === 'USD' && dollarRate <= 0){ showToast('Dollar rate dao (e.g. 110)','error'); return; }
+      db.ref('paymentMethods/'+key).set({ status:true, number:num, logo:payLogoDataUrl, currency, dollarRate: dollarRate || null }).then(()=>{
+        $('new-pay').value=''; $('new-pay-num').value='';
+        if($('new-pay-currency')) $('new-pay-currency').value = 'BDT';
+        if($('new-pay-dollar-rate')) $('new-pay-dollar-rate').value = '';
+        if($('new-pay-dollar-rate-wrap')) $('new-pay-dollar-rate-wrap').classList.add('hidden');
+        $('p-logo-preview').classList.add('hidden'); payLogoDataUrl='';
+        showToast('Method Added ✓','success');
+      });
+    }
+
+    function addVpnPaymentMethod(){
+      const n = $('new-vpn-pay').value.trim(), num = $('new-vpn-pay-num').value.trim(), key = safeDbKey(n);
+      if(!n){ showToast('Enter method name','error'); return; }
+      db.ref('vpnPaymentMethods/'+key).set({ status:true, number:num, logo:vpnPayLogoDataUrl }).then(()=>{ $('new-vpn-pay').value=''; $('new-vpn-pay-num').value=''; $('vpn-p-logo-preview').classList.add('hidden'); vpnPayLogoDataUrl=''; showToast('Method Added','success'); });
+    }
+
+    /* ===== DRAG-TO-REORDER FOR ADMIN COIN LIST ===== */
+    function initCoinDragSort(){
+      const list = $('coin-list');
+      if(!list) return;
+      let dragging=null, ghost=null, startY=0, startRect=null;
+
+      list.querySelectorAll('.coin-box[data-coin-key]').forEach(box=>{
+        const handle = box.querySelector('.drag-handle');
+        if(!handle) return;
+
+        const onStart = (e)=>{
+          e.preventDefault();
+          dragging = box;
+          const pt = e.touches ? e.touches[0] : e;
+          startY = pt.clientY;
+          startRect = box.getBoundingClientRect();
+          ghost = box.cloneNode(true);
+          Object.assign(ghost.style,{
+            position:'fixed', zIndex:'9999', width:startRect.width+'px',
+            top:startRect.top+'px', left:startRect.left+'px',
+            opacity:'0.88', pointerEvents:'none',
+            border:'2px dashed var(--sky)', borderRadius:'16px',
+            background:'var(--panel2)', boxShadow:'0 12px 40px rgba(0,0,0,.7)',
+            transition:'none', transform:'rotate(1.5deg)'
+          });
+          document.body.appendChild(ghost);
+          box.style.opacity='0.25';
+          document.addEventListener('mousemove', onMove);
+          document.addEventListener('touchmove', onMove, {passive:false});
+          document.addEventListener('mouseup', onEnd);
+          document.addEventListener('touchend', onEnd);
+          document.addEventListener('touchcancel', onEnd);
+        };
+        handle.addEventListener('mousedown', onStart);
+        handle.addEventListener('touchstart', onStart, {passive:false});
+      });
+
+      function onMove(e){
+        if(!ghost||!dragging||!startRect) return;
+        if(e.cancelable) e.preventDefault();
+        const pt = e.touches ? e.touches[0] : e;
+        const dy = pt.clientY - startY;
+        ghost.style.top = (startRect.top + dy)+'px';
+        const midY = parseFloat(ghost.style.top) + startRect.height/2;
+        const cards = [...list.querySelectorAll('.coin-box[data-coin-key]')].filter(c=>c!==dragging);
+        for(const card of cards){
+          const r = card.getBoundingClientRect();
+          if(midY > r.top && midY < r.bottom){
+            if(midY < r.top + r.height/2) list.insertBefore(dragging, card);
+            else list.insertBefore(dragging, card.nextSibling);
+            break;
+          }
+        }
+      }
+
+      function onEnd(){
+        if(ghost){ghost.remove();ghost=null;}
+        if(dragging){dragging.style.opacity='';dragging=null;}
+        startRect=null;
+        document.removeEventListener('mousemove', onMove);
+        document.removeEventListener('touchmove', onMove);
+        document.removeEventListener('mouseup', onEnd);
+        document.removeEventListener('touchend', onEnd);
+        document.removeEventListener('touchcancel', onEnd);
+        saveCoinOrder();
+      }
+    }
+
+    function saveCoinOrder(){
+      const list = $('coin-list');
+      if(!list||!firebaseReady) return;
+      const updates = {};
+      [...list.querySelectorAll('.coin-box[data-coin-key]')].forEach((card,idx)=>{
+        const key = card.dataset.coinKey;
+        if(key) updates[`marketConfig/${key}/sortOrder`] = idx;
+      });
+      if(Object.keys(updates).length) db.ref().update(updates).then(()=>showToast('Order saved','success')).catch(()=>{});
+    }
+
+    function bindEvents(){
+      $('help-btn').addEventListener('click', () => openSafeLink(helpLinkValue));
+      $('channel-btn').addEventListener('click', () => openSafeLink(channelLinkValue));
+      $('open-vpn-btn').addEventListener('click', () => userSwitchTab('vpn-scr'));
+      $('admin-btn').addEventListener('click', showAdminPanel);
+      $('return-user-btn').addEventListener('click', showUserPanel);
+      $('admin-back-btn').addEventListener('click', showUserPanel);
+      document.querySelectorAll('#user-nav .nav-tab').forEach(tab => tab.addEventListener('click', () => userSwitchTab(tab.dataset.screen)));
+      
+      // Modals
+      $('close-order-btn').addEventListener('click', closeOrderModal);
+      $('close-vpn-checkout-btn').addEventListener('click', () => $('vpn-checkout-modal').classList.remove('active'));
+      $('confirm-back-btn').addEventListener('click', () => $('confirm-modal').classList.remove('active'));
+      $('admin-confirm-cancel').addEventListener('click', () => $('admin-confirm').classList.remove('active'));
+      $('admin-confirm-ok').addEventListener('click', () => { if(typeof adminConfirmCallback === 'function') adminConfirmCallback(); $('admin-confirm').classList.remove('active'); });
+      $('proof-close-btn').addEventListener('click', closeProofModal);
+      $('payment-cancel-btn').addEventListener('click', closePaymentModal);
+      $('close-coin-detail-btn').addEventListener('click', () => $('coin-detail-modal').classList.remove('active'));
+
+      // Binding file input trigger buttons
+      if($('proof-select-btn')) $('proof-select-btn').addEventListener('click', () => $('proof-file').click());
+      if($('vpn-proof-select-btn')) $('vpn-proof-select-btn').addEventListener('click', () => $('vpn-proof-file').click());
+      if($('broadcast-image-select-btn')) $('broadcast-image-select-btn').addEventListener('click', () => $('broadcast-image-file').click());
+      if($('proof-remove-btn')) $('proof-remove-btn').addEventListener('click', resetProofInput);
+      if($('vpn-proof-remove-btn')) $('vpn-proof-remove-btn').addEventListener('click', resetVpnProofInput);
+      
+      // File Inputs
+      $('proof-file').addEventListener('change', handleProofFileChange);
+      $('vpn-proof-file').addEventListener('change', handleVpnProofFileChange);
+      $('payment-proof-file').addEventListener('change', handlePaymentProofFileChange);
+      
+      $('c-logo-file').addEventListener('change', () => handleLogoUpload('c-logo-file', 'c-logo-preview-img', 'cLogoDataUrl'));
+      $('c-logo-remove-btn').addEventListener('click', () => { cLogoDataUrl=''; $('c-logo-preview').classList.add('hidden'); $('c-logo-file').value=''; });
+      
+      $('edit-c-logo-file').addEventListener('change', () => handleLogoUpload('edit-c-logo-file', 'edit-c-logo-preview-img', 'editCLogoDataUrl'));
+      $('edit-c-logo-remove-btn').addEventListener('click', () => { editCLogoDataUrl=''; $('edit-c-logo-preview').classList.add('hidden'); $('edit-c-logo-file').value=''; });
+
+      $('v-logo-file').addEventListener('change', () => handleLogoUpload('v-logo-file', 'v-logo-preview-img', 'vpnLogoDataUrl'));
+      $('v-logo-remove-btn').addEventListener('click', () => { vpnLogoDataUrl=''; $('v-logo-preview').classList.add('hidden'); $('v-logo-file').value=''; });
+      
+      $('p-logo-file').addEventListener('change', () => handleLogoUpload('p-logo-file', 'p-logo-preview-img', 'payLogoDataUrl'));
+      $('p-logo-remove-btn').addEventListener('click', () => { payLogoDataUrl=''; $('p-logo-preview').classList.add('hidden'); $('p-logo-file').value=''; });
+
+      $('vpn-p-logo-file').addEventListener('change', () => handleLogoUpload('vpn-p-logo-file', 'vpn-p-logo-preview-img', 'vpnPayLogoDataUrl'));
+      $('vpn-p-logo-remove-btn').addEventListener('click', () => { vpnPayLogoDataUrl=''; $('vpn-p-logo-preview').classList.add('hidden'); $('vpn-p-logo-file').value=''; });
+      
+      $('broadcast-image-file').addEventListener('change', async (e) => { const f=e.target.files[0]; if(f){ broadcastNoticeImageDataUrl = await compressImageFile(f); $('broadcast-image-preview-img').src=broadcastNoticeImageDataUrl; $('broadcast-image-preview').classList.remove('hidden'); renderBroadcastNoticePreview(); } });
+      $('broadcast-image-remove-btn').addEventListener('click', resetBroadcastNoticeImage);
+      
+      // Inputs & Buttons
+      $('c-qty').addEventListener('input', calc);
+      $('confirm-order-btn').addEventListener('click', showConfirm);
+      $('submit-vpn-order-btn').addEventListener('click', submitVpnOrder);
+      $('submit-btn').addEventListener('click', submitOrder);
+      $('payment-paid-btn').addEventListener('click', confirmMarkPaid);
+      $('save-coin-edit-btn').addEventListener('click', saveCoinEdit);
+      $('copy-id-btn').addEventListener('click', copyID);
+      
+      // Admin Tools
+      document.querySelectorAll('[data-admin-tab]').forEach(tab => tab.addEventListener('click', () => adminSwitchTab(tab.dataset.adminTab)));
+      document.querySelectorAll('[data-settings-module]').forEach(btn => btn.addEventListener('click', () => openSettingsModule(btn.dataset.settingsModule)));
+      document.querySelectorAll('[data-settings-back]').forEach(btn => btn.addEventListener('click', openSettingsMain));
+      $('add-coin-btn').addEventListener('click', addCoin);
+      $('add-vpn-btn').addEventListener('click', addVpnBrand);
+      $('add-payment-btn').addEventListener('click', addPaymentMethod);
+      // Currency toggle: show/hide dollar rate field
+      if($('new-pay-currency')){
+        $('new-pay-currency').addEventListener('change', () => {
+          const isUSD = $('new-pay-currency').value === 'USD';
+          $('new-pay-dollar-rate-wrap').classList.toggle('hidden', !isUSD);
+        });
+      }
+      $('add-vpn-payment-btn').addEventListener('click', addVpnPaymentMethod);
+      $('save-branding-btn').addEventListener('click', () => { db.ref('settings/branding/siteName').set(normalizeBrandName($('site-name').value)); db.ref('settings/links').set({channel:normalizeLink($('link-channel').value),help:normalizeLink($('link-help').value)}); showToast('Saved','success'); });
+      $('save-disclaimer-btn').addEventListener('click', () => { db.ref('settings/disclaimer/noticeText').set($('disclaimer-text').value); showToast('Saved','success'); });
+      $('disclaimer-text').addEventListener('input', () => { disclaimerNoticeValue = $('disclaimer-text').value; renderDisclaimerNotice(); });
+      $('toggle-user-list-btn').addEventListener('click', toggleLeaderboardUserList);
+      $('payment-search').addEventListener('input', renderAdminOrders);
+      $('payment-filter').addEventListener('change', renderAdminOrders);
+      $('add-tutorial-btn').addEventListener('click', () => { const id = db.ref('tutorialVideos').push().key; db.ref('tutorialVideos/'+id).set({video_title:$('tutorial-title').value||'Video', youtube_url:$('tutorial-url').value, created_at:firebase.database.ServerValue.TIMESTAMP}).then(()=>{ $('tutorial-title').value=''; $('tutorial-url').value=''; showToast('Added','success'); }); });
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      try{
+        initUserProfile(); bindEvents(); renderDisclaimerNotice(); startLegacyBrandObserver(); initFirebase(); startUserListeners();
+        const wantsAdmin = new URLSearchParams(location.search).get('admin') === '1';
+        if(wantsAdmin){ showAdminPanel(); openSettingsMain(); }else showUserPanel();
+        // Swipe-down to close coin detail modal
+        const cdModal = $('coin-detail-modal');
+        if(cdModal){
+          let touchStartY=0;
+          cdModal.addEventListener('touchstart', e=>{ touchStartY=e.touches[0].clientY; }, {passive:true});
+          cdModal.addEventListener('touchend', e=>{ if(e.changedTouches[0].clientY - touchStartY > 60) cdModal.classList.remove('active'); }, {passive:true});
+        }
+      }catch(err){ console.error(err); setTimeout(finishLoading, 0); }
+    });
+  </script>
+</body>
+</html>
