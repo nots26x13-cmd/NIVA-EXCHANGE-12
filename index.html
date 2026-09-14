@@ -695,10 +695,7 @@
 
     <div id="inbox-section" style="display:none;padding-top:6px;">
       <div class="sec-title">📬 INBOX MESSAGES</div>
-      <div style="background:var(--panel2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px;">
-        <div id="inbox-list"></div>
-        <div style="text-align:center;padding:20px;color:var(--subtext);font-size:13px;">No new messages</div>
-      </div>
+      <div id="inbox-list"></div>
     </div>
     
     <div id="settings-section" class="settings-section">
@@ -1264,24 +1261,21 @@
       setTimeout(() => t.classList.remove('show'), 2600);
     }
     
+    // ─── TELEGRAM SENDER UTILITIES ──────────────────────────────────────────────
     function tgEscape(value){ return String(value ?? '').replace(/[&<>]/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[ch])); }
     function telegramApiUrl(method){ return `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/${method}`; }
-    
-    // Telegram Message Builders and Sender Utilities
-    function telegramPostByHiddenForm(payload){
-      const iframeName = 'tg_notify_' + Date.now();
-      const iframe = document.createElement('iframe'); iframe.name = iframeName; iframe.style.display = 'none'; document.body.appendChild(iframe);
-      const form = document.createElement('form'); form.method = 'POST'; form.action = telegramApiUrl('sendMessage'); form.target = iframeName; form.style.display = 'none';
-      Object.entries(payload).forEach(([name,value]) => { const input = document.createElement('input'); input.type = 'hidden'; input.name = name; input.value = String(value ?? ''); form.appendChild(input); });
-      document.body.appendChild(form); form.submit();
-      setTimeout(() => { try{ form.remove(); iframe.remove(); }catch(e){} }, 8000);
-      return true;
-    }
+
     async function sendTelegramMessage(chatId, text){
       const target = String(chatId || '').trim(), message = String(text || '').trim();
       if(!TELEGRAM_NOTIFY_ENABLED || !target || !message) return false;
-      const payload = { chat_id: target, text: message, parse_mode: 'HTML', disable_web_page_preview: 'true' };
-      try{ return telegramPostByHiddenForm(payload); }catch(e){ return false; }
+      try{
+        const resp = await fetch(telegramApiUrl('sendMessage'), {
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({ chat_id:target, text:message, parse_mode:'HTML', disable_web_page_preview:true })
+        });
+        return resp.ok;
+      }catch(e){ return false; }
     }
     function dataUrlToBlob(dataUrl){
       const parts = String(dataUrl || '').split(',');
@@ -1294,22 +1288,24 @@
     async function sendTelegramPhoto(chatId, imageDataUrl, caption=''){
       if(!TELEGRAM_NOTIFY_ENABLED || !chatId || !imageDataUrl) return false;
       try{
-        const formData = new FormData(); formData.append('chat_id', chatId); formData.append('photo', dataUrlToBlob(imageDataUrl), 'proof.jpg');
-        if(caption){ formData.append('caption', caption); formData.append('parse_mode', 'HTML'); }
-        await fetch(telegramApiUrl('sendPhoto'), { method:'POST', mode:'no-cors', body:formData });
-        return true;
+        const formData = new FormData();
+        formData.append('chat_id', chatId);
+        formData.append('photo', dataUrlToBlob(imageDataUrl), 'proof.jpg');
+        if(caption){ formData.append('caption', caption); formData.append('parse_mode','HTML'); }
+        const resp = await fetch(telegramApiUrl('sendPhoto'), { method:'POST', body:formData });
+        return resp.ok;
       }catch(err){ return false; }
     }
-    
+
     function orderShortId(order){ return String(order?.id || '').slice(-7) || '—'; }
     function orderUserLabel(order){ return order?.username && order.username !== 'no_username' ? '@' + order.username : (order?.user || 'Guest'); }
     function getOrderPaymentNumber(order){ return order?.number || '—'; }
-    // Returns correctly-formatted payout string: $ for USD orders, ৳ for BDT
+    // Returns correctly-formatted payout: $ for USD orders, ৳ for BDT
     function formatOrderPayout(order){
       if(order && order.currency === 'USD' && order.payable_usd){
         return `$${Number(order.payable_usd).toFixed(2)}`;
       }
-      return `${formatOrderPayout(order)}`;
+      return `${Number(order?.payable || 0).toFixed(2)}৳`;
     }
     function getOrderUserChatId(order){
       const candidates = [order?.telegram_chat_id, order?.userId, order?.user_id];
@@ -2070,14 +2066,22 @@
       db.ref('orders').on('value', snap => {
         globalOrders = snap.val() || {}; const cnt = {pending:0,approved:0,rejected:0,payment:0,paid:0};
         Object.values(globalOrders).forEach(o => { 
-          if (o.hidden_for_admin) return; // Ignore deleted records
+          if (o.hidden_for_admin) return;
           const os = getOrderStatus(o), ps = getPaymentStatus(o); 
           if(cnt[os] !== undefined) cnt[os]++; 
           if(os === 'approved' && ps === 'pending') cnt.payment++; 
           if(os === 'approved' && ps === 'paid') cnt.paid++; 
         });
-        $('stat-pending').textContent = cnt.pending; $('cnt-pending').textContent = cnt.pending; $('cnt-completed').textContent = cnt.approved; $('cnt-rejected').textContent = cnt.rejected; if($('cnt-payment')) $('cnt-payment').textContent = cnt.payment;
-        if(currentAdminTab !== 'settings') renderAdminOrders(); renderUserTrackingSystem();
+        $('stat-pending').textContent = cnt.pending;
+        $('cnt-pending').textContent = cnt.pending;
+        $('cnt-completed').textContent = cnt.approved;
+        $('cnt-rejected').textContent = cnt.rejected;
+        if($('cnt-payment')) $('cnt-payment').textContent = cnt.payment;
+        // Update inbox badge with pending count
+        if($('cnt-inbox')) $('cnt-inbox').textContent = cnt.pending > 0 ? cnt.pending : '';
+        if(currentAdminTab !== 'settings' && currentAdminTab !== 'inbox') renderAdminOrders();
+        else if(currentAdminTab === 'inbox') renderAdminInbox();
+        renderUserTrackingSystem();
       });
       db.ref('users').on('value', snap => { userRegistryCache = snap.val() || {}; renderUserTrackingSystem(); });
       db.ref('marketConfig').on('value', snap => { marketCache = snap.val() || {}; renderAdminCoins(marketCache); });
@@ -2111,38 +2115,71 @@
     function renderAdminInbox(){
       const inboxList = $('inbox-list');
       if(!inboxList) return;
-      
-      // Fetch messages/notifications from Firebase
+
+      // Show recent pending orders as inbox notifications
+      const pending = Object.values(globalOrders || {})
+        .filter(o => !o.hidden_for_admin && getOrderStatus(o) === 'pending')
+        .sort((a,b) => getCreatedAt(b) - getCreatedAt(a))
+        .slice(0, 30);
+
+      // Also load any manual adminInbox messages
       db.ref('adminInbox').limitToLast(20).once('value', snap => {
-        const messages = snap.val() || {};
-        const arr = Object.entries(messages).map(([id, msg]) => ({id, ...msg})).reverse();
-        
-        if(arr.length === 0){
-          inboxList.innerHTML = '<div style="text-align:center;padding:30px;color:var(--subtext);">📭 No messages</div>';
-          return;
-        }
-        
-        inboxList.innerHTML = arr.map((msg, idx) => {
-          const timestamp = msg.timestamp ? new Date(msg.timestamp).toLocaleString() : 'Just now';
-          const isRead = msg.read === true;
-          return `
-            <div style="background:${isRead ? 'transparent' : 'rgba(14,165,233,.05)'}; border:1px solid var(--border); border-radius:12px; padding:12px; margin-bottom:10px; cursor:pointer;" onclick="markMessageRead('${msg.id}')">
+        const messages = Object.entries(snap.val() || {}).map(([id,m]) => ({id,...m})).reverse();
+        const unread = messages.filter(m => !m.read).length + pending.length;
+        const badge = $('cnt-inbox');
+        if(badge) badge.textContent = unread > 0 ? unread : '';
+
+        let html = '';
+
+        // Manual messages first
+        if(messages.length){
+          html += messages.map(msg => {
+            const ts = msg.timestamp ? new Date(msg.timestamp).toLocaleString() : 'Just now';
+            const isRead = msg.read === true;
+            return `<div style="background:${isRead?'transparent':'rgba(167,139,250,.06)'};border:1px solid ${isRead?'var(--border)':'rgba(167,139,250,.3)'};border-radius:12px;padding:12px;margin-bottom:10px;cursor:pointer;" onclick="markMessageRead('${msg.id}')">
               <div style="display:flex;justify-content:space-between;align-items:start;gap:10px;">
                 <div style="flex:1;">
-                  <div style="font-weight:700;color:var(--text);margin-bottom:4px;">${msg.subject || 'Message'}</div>
-                  <div style="font-size:12px;color:var(--subtext);margin-bottom:6px;">${msg.body || ''}</div>
-                  <div style="font-size:10px;color:var(--gray-mid);">${timestamp}</div>
+                  <div style="font-weight:700;color:var(--text);margin-bottom:4px;">${escapeHtml(msg.subject||'Message')}</div>
+                  <div style="font-size:12px;color:var(--subtext);margin-bottom:6px;">${escapeHtml(msg.body||'')}</div>
+                  <div style="font-size:10px;color:var(--gray-mid);">${ts}</div>
                 </div>
                 <button class="del-btn" onclick="event.stopPropagation();db.ref('adminInbox/${msg.id}').remove();renderAdminInbox();" style="padding:6px 10px;">×</button>
               </div>
-            </div>
-          `;
-        }).join('');
-        
-        // Update inbox badge
-        const unreadCount = arr.filter(m => !m.read).length;
-        const badge = $('cnt-inbox');
-        if(badge) badge.textContent = unreadCount > 0 ? unreadCount : '';
+            </div>`;
+          }).join('');
+        }
+
+        // Pending orders as inbox cards
+        if(pending.length){
+          html += pending.map(o => {
+            const isVpn = o.order_type === 'vpn';
+            const displayName = o.username && o.username !== 'no_username' ? '@'+o.username : (o.user||'—');
+            const title = isVpn ? `🌐 VPN: ${escapeHtml(o.vpn_brand)} - ${escapeHtml(o.vpn_plan)}` : `🪙 ${escapeHtml(o.coin)} — ${Number(o.amt||0).toLocaleString()} coins`;
+            const payout = formatOrderPayout(o);
+            const time = formatDate(getCreatedAt(o));
+            return `<div style="background:rgba(251,191,36,.05);border:1px solid rgba(251,191,36,.25);border-radius:12px;padding:12px;margin-bottom:10px;">
+              <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:8px;">
+                <div>
+                  <div style="font-size:13px;font-weight:900;color:var(--text);">${escapeHtml(displayName)}</div>
+                  <div style="font-size:10px;color:var(--subtext);">#${escapeHtml(String(o.id).slice(-7))} · ${time}</div>
+                </div>
+                <span style="font-size:9px;font-weight:900;background:rgba(251,191,36,.12);color:var(--gold);border:1px solid rgba(251,191,36,.3);padding:3px 8px;border-radius:8px;">⏳ PENDING</span>
+              </div>
+              <div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:4px;">${title}</div>
+              <div style="display:flex;justify-content:space-between;align-items:center;">
+                <span style="font-size:11px;color:var(--subtext);">💳 ${escapeHtml(o.method||'—')} · ${escapeHtml(o.sender||o.number||'—')}</span>
+                <span style="font-size:14px;font-weight:900;color:var(--emerald);">${payout}</span>
+              </div>
+              <div style="display:flex;gap:7px;margin-top:9px;">
+                <button class="btn-accept" style="flex:2;padding:9px;font-size:11px;" onclick="updateOrderStatus('${escapeHtml(o.id)}','approved');renderAdminInbox();">✓ Approve</button>
+                <button class="btn-reject" style="flex:1;padding:9px;font-size:11px;" onclick="updateOrderStatus('${escapeHtml(o.id)}','rejected');renderAdminInbox();">✗ Reject</button>
+                <button class="proof-view-btn" style="flex:1;padding:9px;font-size:11px;" onclick="openProofModal('${escapeHtml(o.id)}')">👁 Proof</button>
+              </div>
+            </div>`;
+          }).join('');
+        }
+
+        inboxList.innerHTML = html || '<div style="text-align:center;padding:40px 20px;color:var(--subtext);">📭 No pending orders</div>';
       });
     }
     
